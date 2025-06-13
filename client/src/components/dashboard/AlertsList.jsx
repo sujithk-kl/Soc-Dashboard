@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// client/src/components/dashboard/AlertsList.jsx
+
+import React from 'react';
 import Card from '../ui/Card';
-import { getAlerts } from '../../services/api';
 
 const severityClasses = {
     critical: 'bg-danger',
@@ -9,34 +10,33 @@ const severityClasses = {
     low: 'bg-success',
 };
 const statusClasses = {
-    open: 'bg-danger/10 text-danger',
-    investigating: 'bg-warning/10 text-warning',
-    resolved: 'bg-success/10 text-success',
+    open: 'text-danger',
+    investigating: 'text-warning',
+    resolved: 'text-success',
 };
 
-const AlertsList = () => {
-    const [alerts, setAlerts] = useState([]);
-    useEffect(() => {
-        const fetchAlerts = async () => setAlerts(await getAlerts());
-        fetchAlerts();
-    }, []);
-
+// The component now receives 'alerts' as a prop
+const AlertsList = ({ alerts }) => {
     return (
         <Card title="Recent Security Alerts">
             <div className="space-y-4">
-                {alerts.map(alert => (
-                    <div key={alert.id} className="flex gap-3">
-                        <div className={`w-2 rounded-full ${severityClasses[alert.severity]}`}></div>
-                        <div className="flex-grow">
-                            <p className="font-semibold text-light">{alert.title}</p>
-                            <p className="text-sm text-gray-text">{alert.description}</p>
-                            <div className="flex justify-between items-center mt-1 text-xs">
-                                <span className="text-gray-text">Source: {alert.source}</span>
-                                <span className={`px-2 py-1 rounded-full font-medium ${statusClasses[alert.status]}`}>{alert.status}</span>
+                {alerts && alerts.length > 0 ? (
+                    alerts.map(alert => (
+                        <div key={alert.id} className="flex gap-3">
+                            <div className={`w-2 flex-shrink-0 rounded-full ${severityClasses[alert.severity]}`}></div>
+                            <div className="flex-grow">
+                                <div className="flex justify-between items-baseline">
+                                    <p className="font-semibold text-light">{alert.title}</p>
+                                    <span className={`text-xs font-medium ${statusClasses[alert.status]}`}>{alert.status}</span>
+                                </div>
+                                <p className="text-sm text-gray-text">{alert.description}</p>
+                                <p className="text-xs text-gray-text mt-1">Source: {alert.source}</p>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                ) : (
+                    <p className="text-gray-text text-center py-4">No recent alerts.</p>
+                )}
             </div>
         </Card>
     );

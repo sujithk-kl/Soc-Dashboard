@@ -1,14 +1,9 @@
+// client/src/components/dashboard/StatCard.jsx
+
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp, faArrowDown, faBell, faExclamationTriangle, faCheckCircle, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import Card from '../ui/Card';
-
-const iconMap = {
-    bell: faBell,
-    'exclamation-triangle': faExclamationTriangle,
-    'check-circle': faCheckCircle,
-    clock: faClock,
-};
 
 const StatCard = ({ title, value, trend, trendUp, icon }) => {
     return (
@@ -19,7 +14,8 @@ const StatCard = ({ title, value, trend, trendUp, icon }) => {
                     <p className="text-3xl font-bold text-light">{value}</p>
                 </div>
                 <div className="p-3 rounded-md bg-primary/10 text-primary">
-                    <FontAwesomeIcon icon={iconMap[icon]} size="lg" />
+                    {/* Use the icon string directly with Font Awesome's library */}
+                    <FontAwesomeIcon icon={['fas', icon]} size="lg" />
                 </div>
             </div>
             <div className={`flex items-center gap-1 text-sm ${trendUp ? 'text-success' : 'text-danger'}`}>
@@ -30,4 +26,5 @@ const StatCard = ({ title, value, trend, trendUp, icon }) => {
     );
 };
 
+// Make sure it has a default export
 export default StatCard;

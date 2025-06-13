@@ -1,46 +1,87 @@
 // client/src/pages/Dashboard.jsx
+
 import React, { useState, useEffect } from 'react';
-import StatCard from '../components/dashboard/StatCard';
+import StatCardsContainer from '../components/dashboard/StatCardsContainer'; 
 import LogFeed from '../components/dashboard/LogFeed';
-import AlertsList from '../components/dashboard/AlertsList';
+import AlertsList from '../components/dashboard/AlertsList'; // This will now be a "dumb" component
 import ThreatMap from '../components/dashboard/ThreatMap';
-import ThreatIntel from '../components/dashboard/ThreatIntel'; // This will now work
-import Timeline from '../components/dashboard/Timeline';       // This will now work
-import { getStats } from '../services/api';
+import ThreatIntel from '../components/dashboard/ThreatIntel';
+import Timeline from '../components/dashboard/Timeline';
+import { getTimelineEvents, getAlerts } from '../services/api'; // Import getAlerts
+import useSocket from '../hooks/useSocket';
 
 const Dashboard = () => {
-    // ... rest of the component is unchanged
-    const [stats, setStats] = useState([]);
+    // State managed by the parent Dashboard component
+    const [logs, setLogs] = useState([]);
+    const [timelineEvents, setTimelineEvents] = useState([]);
+    const [alerts, setAlerts] = useState([]); // <-- NEW STATE FOR ALERTS
 
+    // Listen for real-time log events
+    const newLog = useSocket('new_log');
+
+    // --- INITIAL DATA FETCHING ---
     useEffect(() => {
-        const fetchStats = async () => {
-            const data = await getStats();
-            setStats(data);
+        // Fetch initial data for Timeline
+        const fetchInitialTimeline = async () => {
+            const initialEvents = await getTimelineEvents();
+            setTimelineEvents(initialEvents);
         };
-        fetchStats();
+        // Fetch initial data for Alerts
+        const fetchInitialAlerts = async () => {
+            const initialAlerts = await getAlerts();
+            setAlerts(initialAlerts);
+        };
+
+        fetchInitialTimeline();
+        fetchInitialAlerts(); // Call the new fetch function
     }, []);
+
+    // --- REAL-TIME UPDATE HANDLING ---
+    useEffect(() => {
+        if (newLog) {
+            // 1. Update the main log feed
+            setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
+
+            // 2. Update Timeline and Alerts only for high-severity events
+            if (newLog.severity === 'critical' || newLog.severity === 'high') {
+                
+                // Add to timeline
+                const newTimelineEvent = {
+                    time: newLog.timestamp,
+                    title: newLog.title,
+                    description: `Source: ${newLog.sourceIp}`,
+                    status: newLog.severity,
+                };
+                setTimelineEvents(prevEvents => [newTimelineEvent, ...prevEvents.slice(0, 5)]);
+
+                // 3. Add to Recent Security Alerts
+                const newAlert = {
+                    id: newLog.id,
+                    title: newLog.title,
+                    description: newLog.description,
+                    source: 'Real-time Feed', // Source is the live feed
+                    severity: newLog.severity,
+                    status: 'open', // New alerts are always 'open'
+                };
+                setAlerts(prevAlerts => [newAlert, ...prevAlerts.slice(0, 4)]); // Keep max 5 alerts
+            }
+        }
+    }, [newLog]);
 
     return (
         <div>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {stats.map((stat, index) => (
-                    <StatCard key={index} {...stat} />
-                ))}
-            </div>
+            <StatCardsContainer />
 
-            {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left and Middle Columns */}
                 <div className="lg:col-span-2 space-y-6">
-                    <LogFeed />
-                    <Timeline />
+                    <LogFeed logs={logs} />
+                    <Timeline events={timelineEvents} />
                 </div>
 
-                {/* Right Column */}
                 <div className="space-y-6">
                     <ThreatMap />
-                    <AlertsList />
+                    {/* Pass the managed 'alerts' state down as a prop */}
+                    <AlertsList alerts={alerts} />
                     <ThreatIntel />
                 </div>
             </div>

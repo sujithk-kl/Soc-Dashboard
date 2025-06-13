@@ -1,4 +1,4 @@
-// This file mocks data that would typically come from a database.
+// server/controllers/dataController.js
 
 exports.getStats = (req, res) => {
   res.json([
@@ -25,10 +25,3 @@ exports.getThreatIntel = (req, res) => {
   ]);
 };
 
-exports.getTimelineEvents = (req, res) => {
-  res.json([
-      { time: '14:30', title: 'Ransomware Attack Detected', description: 'Critical server encrypted', status: 'critical' },
-      { time: '14:15', title: 'Data Exfiltration Alert', description: 'Sensitive data transfer detected', status: 'high' },
-      { time: '13:45', title: 'Vulnerability Scan Completed', description: '3 critical vulnerabilities found', status: 'critical' },
-  ]);
-};

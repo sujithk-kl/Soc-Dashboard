@@ -1,35 +1,54 @@
-import React, { useState, useEffect } from 'react';
+// client/src/components/dashboard/ThreatIntel.jsx
+
+import React, { useState, useEffect, useRef } from 'react';
 import Card from '../ui/Card';
-import { getThreatIntel } from '../../services/api'; // We will add this function next
+import { getThreatIntel } from '../../services/api';
+import useSocket from '../../hooks/useSocket';
 
 const ThreatIntel = () => {
     const [intelData, setIntelData] = useState([]);
+    const newIntelData = useSocket('update_intel');
+    const hasReceivedRealtimeUpdate = useRef(false);
 
+    // Effect for fetching the initial data.
     useEffect(() => {
-        const fetchIntel = async () => {
-            try {
-                const data = await getThreatIntel();
-                setIntelData(data);
-            } catch (error) {
-                console.error("Failed to fetch threat intel:", error);
+        const fetchAndSetInitialData = async () => {
+            const initialData = await getThreatIntel();
+            // Only set initial data IF no real-time update has come in yet.
+            if (!hasReceivedRealtimeUpdate.current) {
+                setIntelData(initialData);
             }
         };
-        fetchIntel();
-    }, []);
+        fetchAndSetInitialData();
+    }, []); // Runs only once.
+
+    // Effect for handling real-time updates.
+    useEffect(() => {
+        if (newIntelData && newIntelData.length > 0) {
+            setIntelData(newIntelData);
+            // Mark that a real-time update has been processed.
+            hasReceivedRealtimeUpdate.current = true;
+        }
+    }, [newIntelData]);
 
     return (
         <Card title="Threat Intelligence">
-            <div className="grid grid-cols-1 gap-4">
-                {intelData.map((item, index) => (
-                    <div key={index} className="bg-dark-gray/20 p-3 rounded-lg">
-                        <p className="text-sm text-gray-text">{item.title}</p>
-                        <p className="text-xl font-bold text-light">{item.value}</p>
+            <div className="space-y-4">
+                {intelData.length > 0 ? (
+                    intelData.map((item) => (
+                        <div key={item.title} className="bg-dark-gray/20 p-3 rounded-lg">
+                            <p className="text-sm text-gray-text">{item.title}</p>
+                            <p className="text-xl font-bold text-light">{item.value}</p>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center text-gray-text py-4">
+                        <p>Connecting to Threat Intel Feed...</p>
                     </div>
-                ))}
+                )}
             </div>
         </Card>
     );
 };
 
-// This is the crucial line that fixes the error
 export default ThreatIntel;

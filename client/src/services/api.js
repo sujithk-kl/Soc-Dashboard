@@ -1,26 +1,20 @@
 // client/src/services/api.js
-
 import axios from 'axios';
 
 const API_URL = 'http://localhost:4000/api';
 
-export const getStats = async () => {
-    const response = await axios.get(`${API_URL}/stats`);
-    return response.data;
+const fetchData = async (endpoint) => {
+    try {
+        const response = await axios.get(`${API_URL}/${endpoint}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to fetch data from ${endpoint}:`, error);
+        // Return an empty array or a default value to prevent crashes
+        return []; 
+    }
 };
 
-export const getAlerts = async () => {
-    const response = await axios.get(`${API_URL}/alerts`);
-    return response.data;
-};
-
-// Add these new functions
-export const getThreatIntel = async () => {
-    const response = await axios.get(`${API_URL}/threat-intel`);
-    return response.data;
-};
-
-export const getTimelineEvents = async () => {
-    const response = await axios.get(`${API_URL}/timeline`);
-    return response.data;
-};
+export const getStats = () => fetchData('stats');
+export const getAlerts = () => fetchData('alerts');
+export const getThreatIntel = () => fetchData('threat-intel');
+export const getTimelineEvents = () => fetchData('timeline');

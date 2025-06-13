@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+// client/src/components/dashboard/LogFeed.jsx
+
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Card from '../ui/Card';
-import useSocket from '../../hooks/useSocket';
 import ThreatDetailModal from '../ui/ThreatDetailModal';
 
+// This is just a UI piece now
 const LogEntry = ({ log, onClick }) => {
     const severityClasses = {
         critical: 'bg-danger/10 text-danger',
@@ -15,7 +17,7 @@ const LogEntry = ({ log, onClick }) => {
     return (
         <div className="flex gap-4 py-3 border-b border-border last:border-b-0 cursor-pointer hover:bg-dark-gray/20 px-2" onClick={() => onClick(log)}>
             <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${severityClasses[log.severity]}`}>
-                <FontAwesomeIcon icon={log.icon} />
+                <FontAwesomeIcon icon={['fas', log.icon]} />
             </div>
             <div className="flex-grow">
                 <div className="flex justify-between items-center">
@@ -31,21 +33,19 @@ const LogEntry = ({ log, onClick }) => {
     );
 };
 
-const LogFeed = () => {
-    const [logs, setLogs] = useState([]);
+
+// The LogFeed component now receives logs as a prop
+const LogFeed = ({ logs }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedLog, setSelectedLog] = useState(null);
-    const newLog = useSocket('new_log');
     const logContainerRef = useRef(null);
 
+    // Scroll to top when new logs are added
     useEffect(() => {
-        if (newLog) {
-            setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
-            if (logContainerRef.current) {
-                logContainerRef.current.scrollTop = 0;
-            }
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = 0;
         }
-    }, [newLog]);
+    }, [logs]);
 
     const handleLogClick = (log) => {
         setSelectedLog(log);
@@ -55,7 +55,11 @@ const LogFeed = () => {
     return (
         <Card title="Real-Time Security Logs">
             <div ref={logContainerRef} className="h-[400px] overflow-y-auto">
-                {logs.map(log => <LogEntry key={log.id} log={log} onClick={handleLogClick} />)}
+                {logs.length > 0 ? (
+                    logs.map(log => <LogEntry key={log.id} log={log} onClick={handleLogClick} />)
+                ) : (
+                    <p className="text-gray-text p-4 text-center">Waiting for new security events...</p>
+                )}
             </div>
             {isModalOpen && <ThreatDetailModal threat={selectedLog} onClose={() => setIsModalOpen(false)} />}
         </Card>

@@ -26,5 +26,4 @@ const StatCard = ({ title, value, trend, trendUp, icon }) => {
     );
 };
 
-// Make sure it has a default export
 export default StatCard;

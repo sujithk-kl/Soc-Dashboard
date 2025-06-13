@@ -1,16 +1,19 @@
 // client/src/main.jsx
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import './index.css';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 
-// 1. Import Font Awesome library and icons
+// --- CSS IMPORTS ---
+import './index.css'; // Your main stylesheet
+import 'leaflet/dist/leaflet.css'; // Import Leaflet's CSS here
+
+// --- FONT AWESOME SETUP ---
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';
-
-// 2. Add all solid icons to the library
 library.add(fas);
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

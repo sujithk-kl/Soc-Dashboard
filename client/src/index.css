@@ -1,8 +1,11 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
-@import 'leaflet/dist/leaflet.css';
+/* client/src/index.css */
 
+/* 1. Tailwind directives must come first */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. All your custom CSS, variables, and layers go after the directives */
 :root {
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
@@ -11,6 +14,7 @@
     --success: #10b981;
     --info: #3b82f6;
 
+    /* Light Mode Default */
     --dark: #f8fafc;
     --light: #0f172a;
     --gray: #64748b;
@@ -22,13 +26,7 @@
 }
 
 .dark {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --danger: #dc2626;
-    --warning: #f59e0b;
-    --success: #10b981;
-    --info: #3b82f6;
-
+    /* Dark Mode Overrides */
     --dark: #0f172a;
     --light: #f8fafc;
     --gray: #94a3b8;
@@ -66,4 +64,15 @@ body {
     height: 8px;
     background-color: white;
     border-radius: 50%;
+}
+
+/* Modal fade-in animation */
+@layer utilities {
+    @keyframes fade-in {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.2s ease-out forwards;
+    }
 }

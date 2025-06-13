@@ -1,90 +1,127 @@
 // client/src/pages/Dashboard.jsx
 
 import React, { useState, useEffect } from 'react';
-import StatCardsContainer from '../components/dashboard/StatCardsContainer'; 
+import toast from 'react-hot-toast'; // <-- IMPORT TOAST
+import StatCardsContainer from '../components/dashboard/StatCardsContainer';
 import LogFeed from '../components/dashboard/LogFeed';
-import AlertsList from '../components/dashboard/AlertsList'; // This will now be a "dumb" component
+import AlertsList from '../components/dashboard/AlertsList';
 import ThreatMap from '../components/dashboard/ThreatMap';
 import ThreatIntel from '../components/dashboard/ThreatIntel';
 import Timeline from '../components/dashboard/Timeline';
-import { getTimelineEvents, getAlerts } from '../services/api'; // Import getAlerts
+import IsolatedEvents from '../components/dashboard/IsolatedEvents'; // <-- IMPORT NEW COMPONENT
+import ThreatDetailModal from '../components/ui/ThreatDetailModal';
+import { getTimelineEvents, getAlerts } from '../services/api';
 import useSocket from '../hooks/useSocket';
 
 const Dashboard = () => {
-    // State managed by the parent Dashboard component
+    // State for data
     const [logs, setLogs] = useState([]);
     const [timelineEvents, setTimelineEvents] = useState([]);
-    const [alerts, setAlerts] = useState([]); // <-- NEW STATE FOR ALERTS
+    const [alerts, setAlerts] = useState([]);
+    const [threatMarkers, setThreatMarkers] = useState([]);
+    const [isolatedEvents, setIsolatedEvents] = useState([]); // <-- NEW STATE for isolated events
 
-    // Listen for real-time log events
+    // State for the Modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+
     const newLog = useSocket('new_log');
 
-    // --- INITIAL DATA FETCHING ---
-    useEffect(() => {
-        // Fetch initial data for Timeline
-        const fetchInitialTimeline = async () => {
-            const initialEvents = await getTimelineEvents();
-            setTimelineEvents(initialEvents);
-        };
-        // Fetch initial data for Alerts
-        const fetchInitialAlerts = async () => {
-            const initialAlerts = await getAlerts();
-            setAlerts(initialAlerts);
-        };
+    // Universal Click Handler
+    const handleEventClick = (event) => {
+        setSelectedEvent(event);
+        setIsModalOpen(true);
+    };
 
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedEvent(null);
+    };
+
+    // --- ISOLATION LOGIC ---
+    const handleIsolateEvent = (eventToIsolate) => {
+        // 1. Add to the isolated list for tracking
+        setIsolatedEvents(prev => [eventToIsolate, ...prev]);
+
+        // 2. Remove from all active feeds to "quarantine" it
+        setLogs(prev => prev.filter(e => e.id !== eventToIsolate.id));
+        setAlerts(prev => prev.filter(e => e.id !== eventToIsolate.id));
+        setTimelineEvents(prev => prev.filter(e => e.id !== eventToIsolate.id));
+        setThreatMarkers(prev => prev.filter(e => e.id !== eventToIsolate.id));
+
+        // 3. Show a confirmation toast notification
+        toast.success(`Host ${eventToIsolate.sourceIp || ''} isolated successfully!`);
+    };
+
+    // Initial data fetching
+    useEffect(() => {
+        const fetchInitialTimeline = async () => setTimelineEvents(await getTimelineEvents());
+        const fetchInitialAlerts = async () => setAlerts(await getAlerts());
         fetchInitialTimeline();
-        fetchInitialAlerts(); // Call the new fetch function
+        fetchInitialAlerts();
     }, []);
 
-    // --- REAL-TIME UPDATE HANDLING ---
+    // Real-time update handling
     useEffect(() => {
         if (newLog) {
-            // 1. Update the main log feed
+            // Update main log feed
             setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
 
-            // 2. Update Timeline and Alerts only for high-severity events
-            if (newLog.severity === 'critical' || newLog.severity === 'high') {
-                
-                // Add to timeline
-                const newTimelineEvent = {
-                    time: newLog.timestamp,
+            // Add new marker to map if location exists
+            if (newLog.location) {
+                const newMarker = {
+                    id: newLog.id,
+                    pos: [newLog.location.lat, newLog.location.lng],
                     title: newLog.title,
-                    description: `Source: ${newLog.sourceIp}`,
-                    status: newLog.severity,
+                    severity: newLog.severity,
                 };
-                setTimelineEvents(prevEvents => [newTimelineEvent, ...prevEvents.slice(0, 5)]);
+                setThreatMarkers(prevMarkers => [newMarker, ...prevMarkers.slice(0, 19)]);
+            }
 
-                // 3. Add to Recent Security Alerts
+            // Update other components for high-severity events
+            if (newLog.severity === 'critical' || newLog.severity === 'high') {
+                setTimelineEvents(prevEvents => [{ ...newLog, time: newLog.timestamp }, ...prevEvents.slice(0, 5)]);
+
                 const newAlert = {
                     id: newLog.id,
                     title: newLog.title,
                     description: newLog.description,
-                    source: 'Real-time Feed', // Source is the live feed
+                    source: 'Real-time Feed',
                     severity: newLog.severity,
-                    status: 'open', // New alerts are always 'open'
+                    status: 'open',
                 };
-                setAlerts(prevAlerts => [newAlert, ...prevAlerts.slice(0, 4)]); // Keep max 5 alerts
+                setAlerts(prevAlerts => [newAlert, ...prevAlerts.slice(0, 4)]);
             }
         }
     }, [newLog]);
 
     return (
-        <div>
+        <div className="relative">
             <StatCardsContainer />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                    <LogFeed logs={logs} />
-                    <Timeline events={timelineEvents} />
+                    <LogFeed logs={logs} onEventClick={handleEventClick} />
+                    <Timeline events={timelineEvents} onEventClick={handleEventClick} />
+                    {/* Add the new component to the layout */}
+                    <IsolatedEvents isolatedEvents={isolatedEvents} />
                 </div>
 
                 <div className="space-y-6">
-                    <ThreatMap />
-                    {/* Pass the managed 'alerts' state down as a prop */}
-                    <AlertsList alerts={alerts} />
+                    <ThreatMap markers={threatMarkers} />
+                    <AlertsList alerts={alerts} onEventClick={handleEventClick} />
                     <ThreatIntel />
                 </div>
             </div>
+
+            {/* Render the modal conditionally and pass the new handler */}
+            {isModalOpen && 
+                <ThreatDetailModal 
+                    event={selectedEvent} 
+                    onClose={handleCloseModal} 
+                    onIsolate={handleIsolateEvent} 
+                />
+            }
         </div>
     );
 };

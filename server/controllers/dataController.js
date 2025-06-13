@@ -1,5 +1,7 @@
 // server/controllers/dataController.js
 
+// This function provides the *initial* state for the stat cards.
+// It MUST be exported.
 exports.getStats = (req, res) => {
   res.json([
     { title: 'Total Alerts', value: '1,248', trend: '+12.4%', trendUp: true, icon: 'bell' },
@@ -9,6 +11,8 @@ exports.getStats = (req, res) => {
   ]);
 };
 
+// This function provides the *initial* state for the alerts list.
+// It MUST be exported.
 exports.getAlerts = (req, res) => {
   res.json([
     { id: 1, title: 'Critical Vulnerability Detected', description: 'CVE-2023-12345 found in web server', source: 'Wazuh', timestamp: '10 mins ago', severity: 'critical', status: 'open', sla: '2h' },
@@ -17,6 +21,8 @@ exports.getAlerts = (req, res) => {
   ]);
 };
 
+// This function provides the *initial* state for the threat intel card.
+// It MUST be exported.
 exports.getThreatIntel = (req, res) => {
   res.json([
     { title: 'VirusTotal Score', value: '87/100' },
@@ -25,3 +31,12 @@ exports.getThreatIntel = (req, res) => {
   ]);
 };
 
+// This function provides the *initial* state for the timeline.
+// It MUST be exported.
+exports.getTimelineEvents = (req, res) => {
+  res.json([
+      { id: 101, time: '14:30', title: 'Ransomware Attack Detected', description: 'Critical server encrypted', status: 'critical' },
+      { id: 102, time: '14:15', title: 'Data Exfiltration Alert', description: 'Sensitive data transfer detected', status: 'high' },
+      { id: 103, time: '13:45', title: 'Vulnerability Scan Completed', description: '3 critical vulnerabilities found', status: 'critical' },
+  ]);
+};

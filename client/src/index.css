@@ -1,0 +1,69 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --info: #3b82f6;
+
+    --dark: #f8fafc;
+    --light: #0f172a;
+    --gray: #64748b;
+    --dark-gray: #cbd5e1;
+    --card-bg: #ffffff;
+    --sidebar-bg: #f1f5f9;
+    --header-bg: #ffffff;
+    --border: #e2e8f0;
+}
+
+.dark {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --info: #3b82f6;
+
+    --dark: #0f172a;
+    --light: #f8fafc;
+    --gray: #94a3b8;
+    --dark-gray: #334155;
+    --card-bg: #1e293b;
+    --sidebar-bg: #0f172a;
+    --header-bg: #0f172a;
+    --border: #334155;
+}
+
+body {
+    background-color: var(--dark);
+    color: var(--light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* For React-Leaflet map markers */
+.map-marker {
+    background-color: var(--danger);
+    width: 24px;
+    height: 24px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: relative;
+    border: 1px solid white;
+}
+.map-marker::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+}

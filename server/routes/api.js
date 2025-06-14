@@ -4,24 +4,26 @@ const express = require('express');
 const router = express.Router();
 
 // --- DEPENDENCY IMPORTS ---
-// Import controller functions for handling route logic
-const { 
-    getStats, 
-    getAlerts, 
-    getThreatIntel, 
-    getTimelineEvents 
-} = require('../controllers/dataController');
+// Import controller objects for handling route logic
+const dataController = require('../controllers/dataController');
+const userController = require('../controllers/userController'); // <-- IMPORT USER CONTROLLER
 
 // Import our custom RBAC middleware and permission constants
 const { requirePermission } = require('../middleware/auth');
 const { PERMISSIONS } = require('../config/roles');
 
-// --- PUBLIC ROUTES (No permissions required) ---
+
+// --- AUTHENTICATION ROUTES ---
+router.post('/auth/login', userController.login); // <-- ADD LOGIN ROUTE
+
+
+// --- PUBLIC DATA ROUTES (No permissions required) ---
 // These routes provide the initial data for the dashboard components.
-router.get('/stats', getStats);
-router.get('/alerts', getAlerts);
-router.get('/threat-intel', getThreatIntel);
-router.get('/timeline', getTimelineEvents);
+router.get('/stats', dataController.getStats);
+router.get('/alerts', dataController.getAlerts);
+router.get('/threat-intel', dataController.getThreatIntel);
+router.get('/timeline', dataController.getTimelineEvents);
+
 
 // --- PROTECTED ACTION ROUTES (Permission required) ---
 // This route simulates the "Isolate Host" action.

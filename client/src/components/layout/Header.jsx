@@ -5,21 +5,27 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faSun, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import useClickOutside from '../../hooks/useClickOutside'; // <-- IMPORT HOOK
-import ProfileDropdown from './ProfileDropdown'; // <-- IMPORT DROPDOWN
+import useClickOutside from '../../hooks/useClickOutside';
+import ProfileDropdown from './ProfileDropdown';
 
 const Header = () => {
     const { theme, toggleTheme } = useTheme();
     const { user } = useAuth();
     
-    // --- NEW: State to manage dropdown visibility ---
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    // --- NEW: Logic to close dropdown on outside click ---
     const dropdownRef = useClickOutside(() => {
         setIsDropdownOpen(false);
     });
 
+    // --- THE FIX IS HERE ---
+    // If the user object is null (e.g., during logout), render nothing.
+    // This prevents the component from trying to access properties of null.
+    if (!user) {
+        return null;
+    }
+
+    // This code below will now only run if 'user' is a valid object.
     return (
         <header className="bg-header-bg border-b border-border p-4 px-6 flex justify-between items-center">
             <div>
@@ -31,7 +37,6 @@ const Header = () => {
                     <FontAwesomeIcon icon={theme === 'dark' ? faSun : faMoon} />
                 </button>
 
-                {/* --- Profile section is now a button that toggles the dropdown --- */}
                 <div className="relative" ref={dropdownRef}>
                     <button 
                         onClick={() => setIsDropdownOpen(prev => !prev)} 
@@ -45,7 +50,6 @@ const Header = () => {
                         <FontAwesomeIcon icon={faChevronDown} className={`text-gray-text transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {/* --- Conditionally render the dropdown --- */}
                     {isDropdownOpen && <ProfileDropdown onClose={() => setIsDropdownOpen(false)} />}
                 </div>
             </div>

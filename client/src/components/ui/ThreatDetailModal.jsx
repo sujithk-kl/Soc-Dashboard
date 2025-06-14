@@ -3,6 +3,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faShieldAlt, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../../contexts/AuthContext'; // <-- CORRECTED PATH
 
 // Helper component for displaying rows of data cleanly
 const DetailRow = ({ label, value, children }) => {
@@ -16,7 +17,9 @@ const DetailRow = ({ label, value, children }) => {
 };
 
 // The main modal component
-const ThreatDetailModal = ({ event, onClose, onIsolate }) => { // <-- Add onIsolate prop
+const ThreatDetailModal = ({ event, onClose, onIsolate }) => {
+    const { hasPermission, PERMISSIONS } = useAuth();
+    
     if (!event) return null;
 
     // Create a normalized data object to handle different event structures
@@ -38,27 +41,16 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => { // <-- Add onIsol
         info: { text: 'text-gray-text', bg: 'bg-gray-text/10', border: 'border-gray-text' },
     };
     const style = severityStyles[details.severity] || severityStyles.info;
-
-    // Handler for the "Isolate Host" button
+    
     const handleIsolateClick = () => {
-        if (onIsolate) {
-            onIsolate(event); // Call the function passed from the parent
-        }
-        onClose();       // Close the modal after the action
+        onIsolate(event);
+        onClose();
     };
 
+
     return (
-        // Modal backdrop
-        <div 
-            onClick={onClose}
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-        >
-            {/* Modal content - stopPropagation prevents closing when clicking inside */}
-            <div 
-                onClick={(e) => e.stopPropagation()} 
-                className={`bg-card-bg rounded-lg w-full max-w-2xl border ${style.border} shadow-2xl animate-fade-in`}
-            >
-                {/* Header */}
+        <div onClick={onClose} className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div onClick={(e) => e.stopPropagation()} className={`bg-card-bg rounded-lg w-full max-w-2xl border ${style.border} shadow-2xl animate-fade-in`}>
                 <div className={`flex justify-between items-center p-4 border-b ${style.border}`}>
                     <h2 className="text-xl font-bold text-light flex items-center gap-3">
                         <FontAwesomeIcon icon={faExclamationTriangle} className={style.text} />
@@ -69,9 +61,7 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => { // <-- Add onIsol
                     </button>
                 </div>
                 
-                {/* Body */}
                 <div className="p-6 grid md:grid-cols-2 gap-6">
-                    {/* Left Column: Event Info */}
                     <div className="space-y-4">
                         <h3 className="font-semibold text-light border-b border-border pb-2">Event Information</h3>
                         <dl>
@@ -86,7 +76,6 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => { // <-- Add onIsol
                         </dl>
                     </div>
 
-                    {/* Right Column: Network & Actions */}
                     <div className="space-y-4">
                         <h3 className="font-semibold text-light border-b border-border pb-2">Network Details</h3>
                         <dl>
@@ -96,13 +85,15 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => { // <-- Add onIsol
                         
                         <h3 className="font-semibold text-light border-b border-border pb-2 mt-4">Response Actions</h3>
                         <div className="flex gap-2">
-                           <button 
-                                onClick={handleIsolateClick} // <-- ATTACH THE NEW HANDLER
-                                className="bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary-dark w-full flex items-center justify-center gap-2"
-                           >
-                               <FontAwesomeIcon icon={faShieldAlt} />
-                               Isolate Host
-                           </button>
+                           {hasPermission(PERMISSIONS.PERFORM_RESPONSE_ACTIONS) && (
+                               <button 
+                                    onClick={handleIsolateClick}
+                                    className="bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary-dark w-full flex items-center justify-center gap-2"
+                               >
+                                   <FontAwesomeIcon icon={faShieldAlt} />
+                                   Isolate Host
+                               </button>
+                           )}
                            <button onClick={onClose} className="bg-dark-gray text-light px-4 py-2 text-sm rounded-md hover:bg-border w-full">
                                Dismiss
                            </button>

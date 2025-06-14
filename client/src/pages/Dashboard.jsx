@@ -1,27 +1,31 @@
 // client/src/pages/Dashboard.jsx
 
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast'; // <-- IMPORT TOAST
+import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext'; // <-- CORRECTED PATH
+import { getTimelineEvents, getAlerts } from '../services/api';
+import { isolateHostAction } from '../services/api'; 
+import useSocket from '../hooks/useSocket';
 import StatCardsContainer from '../components/dashboard/StatCardsContainer';
 import LogFeed from '../components/dashboard/LogFeed';
 import AlertsList from '../components/dashboard/AlertsList';
 import ThreatMap from '../components/dashboard/ThreatMap';
 import ThreatIntel from '../components/dashboard/ThreatIntel';
 import Timeline from '../components/dashboard/Timeline';
-import IsolatedEvents from '../components/dashboard/IsolatedEvents'; // <-- IMPORT NEW COMPONENT
+import IsolatedEvents from '../components/dashboard/IsolatedEvents';
 import ThreatDetailModal from '../components/ui/ThreatDetailModal';
-import { getTimelineEvents, getAlerts } from '../services/api';
-import useSocket from '../hooks/useSocket';
 
 const Dashboard = () => {
+    const { user } = useAuth();
+
     // State for data
     const [logs, setLogs] = useState([]);
     const [timelineEvents, setTimelineEvents] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [threatMarkers, setThreatMarkers] = useState([]);
-    const [isolatedEvents, setIsolatedEvents] = useState([]); // <-- NEW STATE for isolated events
+    const [isolatedEvents, setIsolatedEvents] = useState([]);
 
-    // State for the Modal
+    // State for Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -37,20 +41,22 @@ const Dashboard = () => {
         setIsModalOpen(false);
         setSelectedEvent(null);
     };
+    
+    // ISOLATION LOGIC
+    const handleIsolateEvent = async (eventToIsolate) => {
+        try {
+            const result = await isolateHostAction(eventToIsolate, user.role);
 
-    // --- ISOLATION LOGIC ---
-    const handleIsolateEvent = (eventToIsolate) => {
-        // 1. Add to the isolated list for tracking
-        setIsolatedEvents(prev => [eventToIsolate, ...prev]);
+            setIsolatedEvents(prev => [eventToIsolate, ...prev]);
+            setLogs(prev => prev.filter(e => e.id !== eventToIsolate.id));
+            setAlerts(prev => prev.filter(e => e.id !== eventToIsolate.id));
+            setTimelineEvents(prev => prev.filter(e => e.id !== eventToIsolate.id));
+            setThreatMarkers(prev => prev.filter(e => e.id !== eventToIsolate.id));
 
-        // 2. Remove from all active feeds to "quarantine" it
-        setLogs(prev => prev.filter(e => e.id !== eventToIsolate.id));
-        setAlerts(prev => prev.filter(e => e.id !== eventToIsolate.id));
-        setTimelineEvents(prev => prev.filter(e => e.id !== eventToIsolate.id));
-        setThreatMarkers(prev => prev.filter(e => e.id !== eventToIsolate.id));
-
-        // 3. Show a confirmation toast notification
-        toast.success(`Host ${eventToIsolate.sourceIp || ''} isolated successfully!`);
+            toast.success(result.message);
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
 
     // Initial data fetching
@@ -64,10 +70,8 @@ const Dashboard = () => {
     // Real-time update handling
     useEffect(() => {
         if (newLog) {
-            // Update main log feed
             setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
 
-            // Add new marker to map if location exists
             if (newLog.location) {
                 const newMarker = {
                     id: newLog.id,
@@ -78,9 +82,8 @@ const Dashboard = () => {
                 setThreatMarkers(prevMarkers => [newMarker, ...prevMarkers.slice(0, 19)]);
             }
 
-            // Update other components for high-severity events
             if (newLog.severity === 'critical' || newLog.severity === 'high') {
-                setTimelineEvents(prevEvents => [{ ...newLog, time: newLog.timestamp }, ...prevEvents.slice(0, 5)]);
+                setTimelineEvents(prevEvents => [{...newLog, time: newLog.timestamp}, ...prevEvents.slice(0, 5)]);
 
                 const newAlert = {
                     id: newLog.id,
@@ -103,7 +106,6 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <LogFeed logs={logs} onEventClick={handleEventClick} />
                     <Timeline events={timelineEvents} onEventClick={handleEventClick} />
-                    {/* Add the new component to the layout */}
                     <IsolatedEvents isolatedEvents={isolatedEvents} />
                 </div>
 
@@ -114,7 +116,6 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Render the modal conditionally and pass the new handler */}
             {isModalOpen && 
                 <ThreatDetailModal 
                     event={selectedEvent} 

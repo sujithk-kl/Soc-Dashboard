@@ -16,9 +16,10 @@ const DashboardLayout = () => {
                 <Header />
                 <main className="dashboard-content p-6 overflow-y-auto flex-1 bg-dark">
                     <Routes>
+                        {/* THE FIX: path="/" here now refers to "/dashboard/" from App.jsx */}
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/alerts" element={<AlertsPage />} />
-                        {/* ... other protected routes */}
+                        {/* ... other protected routes will work correctly here */}
                     </Routes>
                 </main>
             </div>

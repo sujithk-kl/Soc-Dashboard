@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage'; // <-- IMPORT THE NEW HOMEPAGE
 
 function App() {
   return (
@@ -18,14 +19,13 @@ function App() {
       />
       <Router>
         <Routes>
-          {/* Public Login Route */}
+          {/* --- PUBLIC ROUTES --- */}
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected Routes */}
-          {/* THE FIX: Change path from "/*" to "/*". This tells React Router
-              that this route will contain its own <Routes> for further matching. */}
+          {/* --- PROTECTED DASHBOARD ROUTE --- */}
           <Route 
-            path="/*" 
+            path="/dashboard/*" // All routes starting with /dashboard
             element={
               <ProtectedRoute>
                 <DashboardLayout />

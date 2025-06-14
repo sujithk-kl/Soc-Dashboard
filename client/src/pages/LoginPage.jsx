@@ -16,7 +16,7 @@ const LoginPage = () => {
 
     // If user is already logged in, redirect them to the dashboard
     if (isAuthenticated) {
-        return <Navigate to="/" />;
+        return <Navigate to="/dashboard" />; // <-- UPDATED PATH
     }
 
     const handleSubmit = async (e) => {
@@ -24,7 +24,7 @@ const LoginPage = () => {
         setIsLoading(true);
         const success = await login(email, password);
         if (success) {
-            navigate('/'); // Redirect to dashboard on successful login
+            navigate('/dashboard'); // <-- UPDATED PATH: Redirect to dashboard on successful login
         } else {
             setIsLoading(false);
         }

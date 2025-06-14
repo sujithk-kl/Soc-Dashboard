@@ -76,3 +76,12 @@ body {
         animation: fade-in 0.2s ease-out forwards;
     }
 }
+
+/* --- NEW STYLES FOR THE HOMEPAGE --- */
+.bg-homepage {
+    background-color: #0B1120; /* A darker, slightly bluer background */
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(37, 99, 235, 0.15), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.1), transparent 40%);
+    min-height: 100vh;
+}

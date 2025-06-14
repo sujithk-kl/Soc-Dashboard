@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../contexts/AuthContext'; // <-- CORRECTED PATH
-import { getTimelineEvents, getAlerts } from '../services/api';
-import { isolateHostAction } from '../services/api'; 
+import { useAuth } from '../contexts/AuthContext';
+import { isolateHostAction } from '../services/api';
 import useSocket from '../hooks/useSocket';
 import StatCardsContainer from '../components/dashboard/StatCardsContainer';
 import LogFeed from '../components/dashboard/LogFeed';
@@ -18,60 +17,69 @@ import ThreatDetailModal from '../components/ui/ThreatDetailModal';
 const Dashboard = () => {
     const { user } = useAuth();
 
-    // State for data
+    // State for all dynamic data, initialized as empty arrays
     const [logs, setLogs] = useState([]);
     const [timelineEvents, setTimelineEvents] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [threatMarkers, setThreatMarkers] = useState([]);
     const [isolatedEvents, setIsolatedEvents] = useState([]);
 
-    // State for Modal
+    // State for the modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
 
+    // Listen for new logs from the WebSocket
     const newLog = useSocket('new_log');
 
-    // Universal Click Handler
+    // --- HANDLER FUNCTIONS ---
+
+    // Opens the detail modal when any event is clicked
     const handleEventClick = (event) => {
         setSelectedEvent(event);
         setIsModalOpen(true);
     };
 
+    // Closes the detail modal
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedEvent(null);
     };
     
-    // ISOLATION LOGIC
+    // The complete "Isolate Host" function
     const handleIsolateEvent = async (eventToIsolate) => {
         try {
+            // 1. Call the protected API endpoint for backend action
             const result = await isolateHostAction(eventToIsolate, user.role);
 
+            // 2. If successful, update all relevant UI states
             setIsolatedEvents(prev => [eventToIsolate, ...prev]);
             setLogs(prev => prev.filter(e => e.id !== eventToIsolate.id));
             setAlerts(prev => prev.filter(e => e.id !== eventToIsolate.id));
             setTimelineEvents(prev => prev.filter(e => e.id !== eventToIsolate.id));
             setThreatMarkers(prev => prev.filter(e => e.id !== eventToIsolate.id));
 
+            // 3. Show a success notification from the server's response
             toast.success(result.message);
         } catch (error) {
+            // Show an error notification if the API call fails (e.g., RBAC permission denied)
             toast.error(error.message);
         }
     };
 
-    // Initial data fetching
+    // --- USE EFFECT HOOKS ---
+
+    // This hook is intentionally left empty, ensuring alerts and timeline start empty.
     useEffect(() => {
-        const fetchInitialTimeline = async () => setTimelineEvents(await getTimelineEvents());
-        const fetchInitialAlerts = async () => setAlerts(await getAlerts());
-        fetchInitialTimeline();
-        fetchInitialAlerts();
+        // StatCardsContainer and ThreatIntel still fetch their own initial data.
     }, []);
 
-    // Real-time update handling
+    // This hook handles all real-time updates when a new log arrives.
     useEffect(() => {
         if (newLog) {
+            // Add to the main Real-Time Security Logs feed
             setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
 
+            // Add a marker to the map if the log has location data
             if (newLog.location) {
                 const newMarker = {
                     id: newLog.id,
@@ -82,9 +90,12 @@ const Dashboard = () => {
                 setThreatMarkers(prevMarkers => [newMarker, ...prevMarkers.slice(0, 19)]);
             }
 
+            // For high-severity events, also add them to the Timeline and Alerts list
             if (newLog.severity === 'critical' || newLog.severity === 'high') {
+                // Add to Timeline
                 setTimelineEvents(prevEvents => [{...newLog, time: newLog.timestamp}, ...prevEvents.slice(0, 5)]);
 
+                // Add to Recent Security Alerts
                 const newAlert = {
                     id: newLog.id,
                     title: newLog.title,
@@ -116,6 +127,7 @@ const Dashboard = () => {
                 </div>
             </div>
 
+            {/* The modal receives all necessary props, including the isolation handler */}
             {isModalOpen && 
                 <ThreatDetailModal 
                     event={selectedEvent} 

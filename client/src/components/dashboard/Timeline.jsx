@@ -28,9 +28,9 @@ const Timeline = ({ events, onEventClick }) => {
     return (
         <Card title="Threat Timeline">
             <div className="relative h-[400px] overflow-y-auto pr-2 space-y-2">
-                {events.length > 0 ? (
+                {events && events.length > 0 ? (
                     events.map((event, index) => (
-                        <TimelineItem key={index} event={event} onEventClick={onEventClick} />
+                        <TimelineItem key={event.id || index} event={event} onEventClick={onEventClick} />
                     ))
                 ) : (
                      <p className="text-gray-text p-4 text-center">No high-severity events yet.</p>

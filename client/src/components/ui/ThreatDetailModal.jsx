@@ -3,11 +3,10 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faShieldAlt, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { useAuth } from '../../contexts/AuthContext'; // <-- CORRECTED PATH
+import { useAuth, PERMISSIONS } from '../../contexts/AuthContext';
 
-// Helper component for displaying rows of data cleanly
 const DetailRow = ({ label, value, children }) => {
-    if (!value && !children) return null;
+    if (value === null || value === undefined) return null; // Don't render empty rows
     return (
         <div className="grid grid-cols-3 gap-2 py-2 border-b border-border/50">
             <dt className="text-sm font-medium text-gray-text">{label}</dt>
@@ -16,16 +15,18 @@ const DetailRow = ({ label, value, children }) => {
     );
 };
 
-// The main modal component
 const ThreatDetailModal = ({ event, onClose, onIsolate }) => {
-    const { hasPermission, PERMISSIONS } = useAuth();
+    const { hasPermission } = useAuth();
     
     if (!event) return null;
 
-    // Create a normalized data object to handle different event structures
+    // --- ROBUST DATA NORMALIZATION ---
+    // This ensures we always have valid data, even if the event object is inconsistent.
     const details = {
+        id: event.id || Date.now(), // Fallback to a unique ID
         title: event.title || 'Event Details',
-        severity: event.severity || event.status || 'info',
+        // Coalesce different property names and convert to lowercase for matching.
+        severity: (event.severity || event.status || 'info').toLowerCase(),
         timestamp: event.timestamp || event.time || new Date().toLocaleTimeString(),
         description: event.description || 'No description available.',
         sourceIp: event.sourceIp,
@@ -38,15 +39,21 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => {
         high: { text: 'text-warning', bg: 'bg-warning/10', border: 'border-warning' },
         medium: { text: 'text-info', bg: 'bg-info/10', border: 'border-info' },
         low: { text: 'text-success', bg: 'bg-success/10', border: 'border-success' },
+        // --- THE FIX IS HERE ---
+        // We now have explicit styles for 'open' and 'investigating' which
+        // might come from the `status` property of an alert object.
+        open: { text: 'text-danger', bg: 'bg-danger/10', border: 'border-danger' },
+        investigating: { text: 'text-warning', bg: 'bg-warning/10', border: 'border-warning' },
+        // A catch-all default style
         info: { text: 'text-gray-text', bg: 'bg-gray-text/10', border: 'border-gray-text' },
     };
+
+    // The style will now ALWAYS find a match or fall back to 'info'.
     const style = severityStyles[details.severity] || severityStyles.info;
     
     const handleIsolateClick = () => {
-        onIsolate(event);
-        onClose();
+        onIsolate({ id: details.id, sourceIp: details.sourceIp, title: details.title });
     };
-
 
     return (
         <div onClick={onClose} className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -88,7 +95,7 @@ const ThreatDetailModal = ({ event, onClose, onIsolate }) => {
                            {hasPermission(PERMISSIONS.PERFORM_RESPONSE_ACTIONS) && (
                                <button 
                                     onClick={handleIsolateClick}
-                                    className="bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary-dark w-full flex items-center justify-center gap-2"
+                                    className="bg-primary hover:bg-primary-dark w-full flex items-center justify-center gap-2 text-white px-4 py-2 text-sm rounded-md"
                                >
                                    <FontAwesomeIcon icon={faShieldAlt} />
                                    Isolate Host

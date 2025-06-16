@@ -24,7 +24,9 @@ const RegisterPage = () => {
         try {
             const response = await axios.post(`${API_URL}/auth/register`, { name, email, password });
             toast.success(response.data.message);
-            navigate('/login'); // Redirect to login page after successful registration
+            // --- THIS IS THE REDIRECT LOGIC ---
+            // On success, navigate the user to the login page.
+            navigate('/login');
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
         } finally {

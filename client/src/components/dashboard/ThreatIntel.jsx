@@ -10,23 +10,21 @@ const ThreatIntel = () => {
     const newIntelData = useSocket('update_intel');
     const hasReceivedRealtimeUpdate = useRef(false);
 
-    // Effect for fetching the initial data.
+    // Effect to fetch initial data
     useEffect(() => {
         const fetchAndSetInitialData = async () => {
             const initialData = await getThreatIntel();
-            // Only set initial data IF no real-time update has come in yet.
             if (!hasReceivedRealtimeUpdate.current) {
                 setIntelData(initialData);
             }
         };
         fetchAndSetInitialData();
-    }, []); // Runs only once.
+    }, []);
 
-    // Effect for handling real-time updates.
+    // Effect to handle real-time updates
     useEffect(() => {
         if (newIntelData && newIntelData.length > 0) {
             setIntelData(newIntelData);
-            // Mark that a real-time update has been processed.
             hasReceivedRealtimeUpdate.current = true;
         }
     }, [newIntelData]);
@@ -35,8 +33,13 @@ const ThreatIntel = () => {
         <Card title="Threat Intelligence">
             <div className="space-y-4">
                 {intelData.length > 0 ? (
-                    intelData.map((item) => (
-                        <div key={item.title} className="bg-dark-gray/20 p-3 rounded-lg">
+                    // The .map() function provides a second argument: the index.
+                    intelData.map((item, index) => (
+                        // --- THE DEFINITIVE FIX ---
+                        // We are creating a key that is guaranteed to be unique
+                        // by combining the item's title with its index in the array.
+                        // The key is on the outermost element being returned by the map.
+                        <div key={`${item.title}-${index}`} className="bg-dark-gray/20 p-3 rounded-lg">
                             <p className="text-sm text-gray-text">{item.title}</p>
                             <p className="text-xl font-bold text-light">{item.value}</p>
                         </div>

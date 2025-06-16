@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 const API_URL = 'http://localhost:4000/api';
 
-// Define roles and permissions
+// Exporting these makes them available for import elsewhere
 export const ROLES = {
     ADMIN: 'Admin',
     ANALYST: 'Analyst',
@@ -63,12 +63,15 @@ export const AuthProvider = ({ children }) => {
         toast('You have been logged out.');
     };
 
+    // --- VERIFIED PERMISSIONS MAP ---
+    // This is the single source of truth for what a role can do.
     const rolePermissions = {
         [ROLES.ADMIN]: [PERMISSIONS.PERFORM_RESPONSE_ACTIONS, PERMISSIONS.MANAGE_USERS],
-        [ROLES.ANALYST]: [PERMISSIONS.PERFORM_RESPONSE_ACTIONS],
-        [ROLES.VIEWER]: [],
+        [ROLES.ANALYST]: [PERMISSIONS.PERFORM_RESPONSE_ACTIONS], // Analyst CAN perform response actions
+        [ROLES.VIEWER]: [], // Viewer CANNOT
     };
     
+    // The hasPermission function. This must work correctly.
     const hasPermission = (permission) => {
         if (!user) return false;
         const permissionsForRole = rolePermissions[user.role] || [];

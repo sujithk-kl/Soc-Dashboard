@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage'; // <-- IMPORT THE NEW HOMEPAGE
+import HomePage from './pages/HomePage'; // <-- Import the new homepage
 
 function App() {
   return (
@@ -20,12 +20,16 @@ function App() {
       <Router>
         <Routes>
           {/* --- PUBLIC ROUTES --- */}
+          {/* A landing page for unauthenticated users */}
           <Route path="/" element={<HomePage />} />
+          {/* The login page remains public */}
           <Route path="/login" element={<LoginPage />} />
 
           {/* --- PROTECTED DASHBOARD ROUTE --- */}
+          {/* The wildcard '/*' now matches all routes that BEGIN with /dashboard */}
+          {/* e.g., /dashboard, /dashboard/alerts, /dashboard/reports, etc. */}
           <Route 
-            path="/dashboard/*" // All routes starting with /dashboard
+            path="/dashboard/*"
             element={
               <ProtectedRoute>
                 <DashboardLayout />

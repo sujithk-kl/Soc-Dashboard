@@ -15,7 +15,6 @@ const fetchData = async (endpoint) => {
 
 export const getStats = () => fetchData('stats');
 export const getAlerts = () => fetchData('alerts');
-export const getThreatIntel = () => fetchData('threat-intel');
 export const getTimelineEvents = () => fetchData('timeline');
 
 // --- THIS FUNCTION IS CALLED BY THE ISOLATE HANDLER ---

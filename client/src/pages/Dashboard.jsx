@@ -11,7 +11,6 @@ import StatCardsContainer from '../components/dashboard/StatCardsContainer';
 import LogFeed from '../components/dashboard/LogFeed';
 import AlertsList from '../components/dashboard/AlertsList';
 import ThreatMap from '../components/dashboard/ThreatMap';
-import ThreatIntel from '../components/dashboard/ThreatIntel';
 import Timeline from '../components/dashboard/Timeline';
 import IsolatedEvents from '../components/dashboard/IsolatedEvents';
 import ThreatDetailModal from '../components/ui/ThreatDetailModal';
@@ -112,7 +111,6 @@ const Dashboard = () => {
                 <div className="space-y-6">
                     <ThreatMap markers={threatMarkers} />
                     <AlertsList alerts={alerts} onEventClick={handleEventClick} />
-                    <ThreatIntel />
                 </div>
             </div>
 

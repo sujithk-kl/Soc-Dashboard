@@ -34,7 +34,3 @@ exports.getTimelineEvents = async (req, res) => {
         res.status(500).json({ message: 'Error fetching timeline events' });
     }
 };
-
-exports.getThreatIntel = (req, res) => {
-  res.json([ { /* ...mock data... */ } ]);
-};

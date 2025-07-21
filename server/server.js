@@ -13,11 +13,11 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const clientURL = 'http://localhost:5173';
+const clientURLs = ["http://localhost:5173", "http://localhost:5174"];
 
-const io = new Server(server, { cors: { origin: clientURL, methods: ["GET", "POST"] } });
+const io = new Server(server, { cors: { origin: clientURLs, methods: ["GET", "POST"] } });
 
-app.use(cors({ origin: clientURL }));
+app.use(cors({ origin: clientURLs }));
 app.use(express.json());
 
 app.use('/api', apiRoutes);

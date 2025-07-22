@@ -29,3 +29,6 @@ export const isolateHostAction = async (event, userRole) => {
         throw error.response?.data || new Error("Isolate action failed");
     }
 };
+
+// --- NEW FUNCTION TO GET ALL ALERTS ---
+export const getAllAlerts = () => fetchData('alerts/all');

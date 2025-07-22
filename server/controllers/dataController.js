@@ -34,3 +34,15 @@ exports.getTimelineEvents = async (req, res) => {
         res.status(500).json({ message: 'Error fetching timeline events' });
     }
 };
+
+// --- NEW FUNCTION TO GET ALL ALERTS ---
+exports.getAllAlerts = async (req, res) => {
+    try {
+        // Find all alerts and sort them with the newest ones first
+        const alerts = await Alert.find({}).sort({ createdAt: -1 });
+        res.json(alerts);
+    } catch (error) {
+        console.error("Error fetching all alerts:", error);
+        res.status(500).json({ message: 'Error fetching all alerts' });
+    }
+};

@@ -9,6 +9,15 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 
+// Import the placeholder pages here at the top level
+import Dashboard from './pages/Dashboard';
+import AlertsPage from './pages/placeholder/AlertsPage';
+import ReportsPage from './pages/placeholder/ReportsPage';
+import LogManagementPage from './pages/placeholder/LogManagementPage';
+import RbacPage from './pages/placeholder/RbacPage';
+import SettingsPage from './pages/placeholder/SettingsPage';
+
+
 function App() {
   return (
     <>
@@ -23,12 +32,33 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* --- PROTECTED DASHBOARD ROUTE --- */}
-          {/* Any URL starting with /dashboard/ will be handled here */}
+          {/* --- PROTECTED LAYOUT ROUTE --- */}
+          {/* This is the new, more stable structure. The DashboardLayout component
+              now acts as a wrapper for all its child routes. */}
           <Route 
-            path="/dashboard/*"
-            element={ <ProtectedRoute> <DashboardLayout /> </ProtectedRoute> } 
-          />
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Child routes are now nested directly here */}
+            <Route index element={<Dashboard />} /> 
+            <Route path="alerts" element={<AlertsPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="log-management" element={<LogManagementPage />} />
+            <Route path="rbac" element={<RbacPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+
+            {/* A catch-all for any page not found within /dashboard */}
+            <Route path="*" element={
+              <div className="p-6">
+                  <h1 className="text-3xl font-bold text-light">Page Not Found</h1>
+              </div>
+            } />
+          </Route>
+          
         </Routes>
       </Router>
     </>

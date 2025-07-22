@@ -15,7 +15,8 @@ router.post('/auth/register', userController.register); // Registration route
 
 // --- PUBLIC DATA ROUTES (No permissions required) ---
 router.get('/stats', dataController.getStats);
-router.get('/alerts', dataController.getAlerts);
+router.get('/alerts', dataController.getAlerts); // This gets the recent 5 for the dashboard
+router.get('/alerts/all', dataController.getAllAlerts); // <-- NEW ROUTE for the alerts page
 router.get('/timeline', dataController.getTimelineEvents);
 
 // --- PROTECTED ACTION ROUTES (Permission required) ---

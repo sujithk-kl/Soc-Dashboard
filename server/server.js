@@ -15,7 +15,7 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const clientURLs = ["http://localhost:5173", "http://localhost:5174", "https://soc-dashboard-tau.vercel.app"];
+const clientURLs = ["http://localhost:5173", "http://localhost:5174", "https://soc-dashboard-tau.vercel.app","https://soc.sujithk.me"];
 
 const io = new Server(server, { cors: { origin: clientURLs, methods: ["GET", "POST"] } });
 

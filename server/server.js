@@ -7,6 +7,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const startLogSimulator = require('./services/logSimulator');
 const apiRoutes = require('./routes/api');
+const job = require('./config/cron');
+
 
 dotenv.config();
 connectDB();

@@ -8,7 +8,7 @@ import { faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api`;
 
 const RegisterPage = () => {
     const [name, setName] = useState('');

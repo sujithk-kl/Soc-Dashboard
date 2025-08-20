@@ -1,4 +1,5 @@
 const { CronJob } = require('cron');
+const http = require('http');
 const https = require('https');
 
 require('dotenv').config();
@@ -12,19 +13,26 @@ if (backendUrl) {
     function () {
       console.log(`Attempting to keep server active at ${backendUrl}`);
 
-      https
-        .get(backendUrl, (res) => {
-          if (res.statusCode === 200) {
-            console.log('Server is active');
-          } else {
-            console.error(
-              `Failed to reach server, status code: ${res.statusCode}`
-            );
-          }
-        })
-        .on('error', (err) => {
-          console.error('Error during server ping:', err.message);
-        });
+      try {
+        const url = new URL(backendUrl);
+        const client = url.protocol === 'http:' ? http : https;
+
+        client
+          .get(backendUrl, (res) => {
+            if (res.statusCode === 200) {
+              console.log('Server is active');
+            } else {
+              console.error(
+                `Failed to reach server, status code: ${res.statusCode}`
+              );
+            }
+          })
+          .on('error', (err) => {
+            console.error('Error during server ping:', err.message);
+          });
+      } catch (err) {
+        console.error('Invalid BACKEND_URL:', err.message);
+      }
     },
     null,
     true,

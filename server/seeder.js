@@ -17,9 +17,8 @@ const importData = async () => {
         await Alert.deleteMany();
         await Event.deleteMany();
 
-        console.log('Importing sample users...');
+        console.log('Importing sample users (no default Admin)...');
         await User.insertMany([
-            { name: 'Alice Admin', email: 'admin@soc.com', password: 'password123', role: ROLES.ADMIN, initials: 'AA' },
             { name: 'John Doe', email: 'analyst@soc.com', password: 'password123', role: ROLES.ANALYST, initials: 'JD' },
             { name: 'Bob Viewer', email: 'viewer@soc.com', password: 'password123', role: ROLES.VIEWER, initials: 'BV' },
         ]);
@@ -31,6 +30,7 @@ const importData = async () => {
         ]);
         
         console.log('✅ Data Imported Successfully!');
+        console.log('💡 To create an admin user, register as the first user on the website!');
         process.exit();
     } catch (error) {
         console.error(`❌ Error with data import: ${error}`);

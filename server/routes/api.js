@@ -7,11 +7,32 @@ const router = express.Router();
 const dataController = require('../controllers/dataController');
 const userController = require('../controllers/userController');
 const { requirePermission } = require('../middleware/auth');
-const { PERMISSIONS } = require('../config/roles');
+const { PERMISSIONS, ROLES } = require('../config/roles');
 
 // --- AUTHENTICATION ROUTES ---
 router.post('/auth/login', userController.login);
-router.post('/auth/register', userController.register); // Registration route
+router.post('/auth/register', userController.register); // Registration route (bootstrap + admin-only afterwards)
+
+// Bootstrap status: whether any Admin exists
+router.get('/auth/bootstrap-status', async (req, res) => {
+  const User = require('../models/userModel');
+  const { ROLES } = require('../config/roles');
+  const count = await User.countDocuments({ role: ROLES.ADMIN });
+  res.status(200).json({ hasAdmin: count > 0 });
+});
+
+// --- ADMIN MANAGEMENT ROUTES ---
+router.get('/admin/users', (req, res, next) => {
+    const role = req.header('X-User-Role');
+    if (role !== ROLES.ADMIN) return res.status(403).json({ message: 'Admin only.' });
+    next();
+}, userController.listUsers);
+
+router.put('/admin/users/:id/password', (req, res, next) => {
+    const role = req.header('X-User-Role');
+    if (role !== ROLES.ADMIN) return res.status(403).json({ message: 'Admin only.' });
+    next();
+}, userController.updatePassword);
 
 // --- PUBLIC DATA ROUTES (No permissions required) ---
 router.get('/stats', dataController.getStats);

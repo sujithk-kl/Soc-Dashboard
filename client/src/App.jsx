@@ -15,10 +15,13 @@ import AlertsPage from './pages/placeholder/AlertsPage';
 import ReportsPage from './pages/placeholder/ReportsPage';
 import LogManagementPage from './pages/placeholder/LogManagementPage';
 import RbacPage from './pages/placeholder/RbacPage';
+import { useAuth } from './contexts/AuthContext';
 import SettingsPage from './pages/placeholder/SettingsPage';
 
 
 function App() {
+  const { user, ROLES } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
   return (
     <>
       <Toaster 
@@ -48,7 +51,7 @@ function App() {
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="log-management" element={<LogManagementPage />} />
-            <Route path="rbac" element={<RbacPage />} />
+            {isAdmin && <Route path="rbac" element={<RbacPage />} />}
             <Route path="settings" element={<SettingsPage />} />
 
             {/* A catch-all for any page not found within /dashboard */}

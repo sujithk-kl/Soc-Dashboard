@@ -1,18 +1,32 @@
 // client/src/pages/LoginPage.jsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
+import { getBootstrapStatus } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('analyst@soc.com');
-    const [password, setPassword] = useState('password123');
+    const [email, setEmail] = useState();
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
     const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const [hasAdmin, setHasAdmin] = useState(null);
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const { hasAdmin } = await getBootstrapStatus();
+                setHasAdmin(hasAdmin);
+            } catch (_) {
+                setHasAdmin(true); // default to hiding link if uncertain
+            }
+        };
+        load();
+    }, []);
 
     // If the user is already logged in, send them straight to the dashboard
     if (isAuthenticated) {
@@ -73,14 +87,16 @@ const LoginPage = () => {
                         </button>
                     </div>
                 </form>
-                <div className="text-center text-sm text-gray-text">
-                    <p>
-                        Don't have an account?{' '}
-                        <Link to="/register" className="font-medium text-primary hover:underline">
-                            Sign Up
-                        </Link>
-                    </p>
-                </div>
+                {hasAdmin === false && (
+                    <div className="text-center text-sm text-gray-text">
+                        <p>
+                            Don't have an account?{' '}
+                            <Link to="/register" className="font-medium text-primary hover:underline">
+                                Sign Up
+                            </Link>
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

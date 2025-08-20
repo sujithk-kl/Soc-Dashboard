@@ -3,6 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShieldAlt, faChartLine, faBell, faFileAlt, faDatabase, faUsersCog, faCog } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Using absolute paths is now more stable with the new routing structure.
 const navItems = [
@@ -15,13 +16,16 @@ const navItems = [
 ];
 
 const Sidebar = () => {
+    const { user, ROLES } = useAuth();
+    const isAdmin = user?.role === ROLES.ADMIN;
+    const items = navItems.filter(item => isAdmin || item.to !== '/dashboard/rbac');
     return (
         <aside className="bg-sidebar-bg border-r border-border flex flex-col">
             <div className="p-6 border-b border-border">
                 {/* ... header ... */}
             </div>
             <nav className="flex flex-col gap-2 py-6">
-                {navItems.map((item) => (
+                {items.map((item) => (
                     <NavLink
                         key={item.text}
                         to={item.to}

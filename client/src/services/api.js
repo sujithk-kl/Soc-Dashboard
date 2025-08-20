@@ -32,3 +32,31 @@ export const isolateHostAction = async (event, userRole) => {
 
 // --- NEW FUNCTION TO GET ALL ALERTS ---
 export const getAllAlerts = () => fetchData('alerts/all');
+
+// --- ADMIN USER MANAGEMENT ---
+export const listUsers = async (adminRole) => {
+    const res = await axios.get(`${API_URL}/admin/users`, {
+        headers: { 'X-User-Role': adminRole }
+    });
+    return res.data;
+};
+
+// --- BOOTSTRAP STATUS ---
+export const getBootstrapStatus = async () => {
+    const res = await axios.get(`${API_URL}/auth/bootstrap-status`);
+    return res.data; // { hasAdmin: boolean }
+};
+
+export const updateUserPassword = async (userId, newPassword, adminRole) => {
+    const res = await axios.put(`${API_URL}/admin/users/${userId}/password`, { newPassword }, {
+        headers: { 'X-User-Role': adminRole }
+    });
+    return res.data;
+};
+
+export const adminCreateUser = async (payload, adminRole) => {
+    const res = await axios.post(`${API_URL}/auth/register`, payload, {
+        headers: { 'X-User-Role': adminRole }
+    });
+    return res.data;
+};

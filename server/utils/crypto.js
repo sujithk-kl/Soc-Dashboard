@@ -28,6 +28,7 @@ function loadKey() {
 }
 
 const KEY = loadKey();
+let warnedDecryptFail = false;
 
 // AES-256-GCM encrypt a UTF-8 string
 function encryptString(plainText) {
@@ -44,16 +45,25 @@ function encryptString(plainText) {
     };
 }
 
-// AES-256-GCM decrypt to UTF-8 string
+// AES-256-GCM decrypt to UTF-8 string (tolerant)
 function decryptToString(enc) {
     if (!enc || !enc.iv || !enc.tag || !enc.data) return null;
-    const iv = Buffer.from(enc.iv, 'base64');
-    const tag = Buffer.from(enc.tag, 'base64');
-    const data = Buffer.from(enc.data, 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-gcm', KEY, iv);
-    decipher.setAuthTag(tag);
-    const plain = Buffer.concat([decipher.update(data), decipher.final()]);
-    return plain.toString('utf8');
+    try {
+        const iv = Buffer.from(enc.iv, 'base64');
+        const tag = Buffer.from(enc.tag, 'base64');
+        const data = Buffer.from(enc.data, 'base64');
+        const decipher = crypto.createDecipheriv('aes-256-gcm', KEY, iv);
+        decipher.setAuthTag(tag);
+        const plain = Buffer.concat([decipher.update(data), decipher.final()]);
+        return plain.toString('utf8');
+    } catch (e) {
+        // Likely encrypted with a different key; avoid crashing API responses
+        if (!warnedDecryptFail) {
+            console.warn('[crypto] Warning: Failed to decrypt a value (key mismatch or corrupted data). Returning null.');
+            warnedDecryptFail = true;
+        }
+        return null;
+    }
 }
 
 module.exports = { encryptString, decryptToString };

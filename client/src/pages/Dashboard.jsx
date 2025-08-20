@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { isolateHostAction, getWindowsSecurityEvents } from '../services/api';
+import { isolateHostAction, getWindowsSecurityEvents, getWindowsDefenderEvents, getSmartScreenEvents } from '../services/api';
 import useSocket from '../hooks/useSocket';
 
 // Import all layout and dashboard components
@@ -77,8 +77,13 @@ const Dashboard = () => {
         let isMounted = true;
         const fetchEvents = async () => {
             try {
-                const events = await getWindowsSecurityEvents();
-                if (!isMounted || !Array.isArray(events)) return;
+                const [sec, def, ss] = await Promise.all([
+                    getWindowsSecurityEvents(),
+                    getWindowsDefenderEvents(),
+                    getSmartScreenEvents()
+                ]);
+                const events = [...(sec||[]), ...(def||[]), ...(ss||[])];
+                if (!isMounted || events.length === 0) return;
                 // Keep most recent 100 entries
                 setLogs(prev => {
                     const merged = [...events, ...prev];

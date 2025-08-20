@@ -25,5 +25,8 @@ eventSchema.methods.toJSON = function () {
     return obj;
 };
 
+// Reduce duplicates: same title at the same recorded time should be unique
+eventSchema.index({ title: 1, time: 1 }, { unique: true, sparse: true });
+
 const Event = mongoose.model('Event', eventSchema);
 module.exports = Event;

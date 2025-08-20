@@ -40,6 +40,8 @@ router.get('/alerts', dataController.getAlerts); // This gets the recent 5 for t
 router.get('/alerts/all', dataController.getAllAlerts); // <-- NEW ROUTE for the alerts page
 router.get('/timeline', dataController.getTimelineEvents);
 router.get('/windows/security', dataController.getWindowsSecurityEvents); // NEW: Windows Security events
+router.get('/windows/defender', dataController.getWindowsDefenderEvents); // NEW: Defender Operational log
+router.get('/windows/smartscreen', dataController.getSmartScreenEvents); // NEW: SmartScreen Operational log
 
 // --- PROTECTED ACTION ROUTES (Permission required) ---
 router.post(

@@ -63,3 +63,5 @@ export const adminCreateUser = async (payload, adminRole) => {
 
 // --- WINDOWS SECURITY EVENTS ---
 export const getWindowsSecurityEvents = () => fetchData('windows/security');
+export const getWindowsDefenderEvents = () => fetchData('windows/defender');
+export const getSmartScreenEvents = () => fetchData('windows/smartscreen');

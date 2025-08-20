@@ -6,15 +6,66 @@ const windowsReader = new WindowsEventReader();
 
 exports.getStats = async (req, res) => {
     try {
-        const totalAlerts = await Alert.countDocuments();
-        const criticalThreats = await Alert.countDocuments({ severity: 'critical' });
+        // Pull recent Windows events
+        const [sec, def, ss] = await Promise.all([
+            windowsReader.readSecurityEvents(200),
+            windowsReader.readFromLog('Microsoft-Windows-Windows Defender/Operational', 100),
+            windowsReader.readFromLog('Microsoft-Windows-SmartScreen/Operational', 100)
+        ]);
+
+        // Some systems use alternate SmartScreen channel
+        let smartscreen = ss;
+        if (!smartscreen || smartscreen.length === 0) {
+            smartscreen = await windowsReader.readFromLog('Windows Defender SmartScreen/Operational', 100);
+        }
+
+        const securityEvents = Array.isArray(sec) ? sec : [];
+        const defenderEvents = Array.isArray(def) ? def : [];
+        const smartScreenEvents = Array.isArray(smartscreen) ? smartscreen : [];
+
+        // Total Alerts: combine all three
+        const totalAlerts = securityEvents.length + defenderEvents.length + smartScreenEvents.length;
+
+        // Critical Threats: failed logons (4625) + all Defender/SmartScreen events
+        const failedLogons = securityEvents.filter(e => Number(e.Id) === 4625).length;
+        const criticalThreats = failedLogons + defenderEvents.length + smartScreenEvents.length;
+
+        // Incidents Resolved: percent of successful logons among logon events
+        const successfulLogons = securityEvents.filter(e => Number(e.Id) === 4624).length;
+        const logonTotal = successfulLogons + failedLogons;
+        const incidentsResolvedPct = logonTotal > 0 ? Math.round((successfulLogons / logonTotal) * 100) : 100;
+
+        // Avg. Response Time: average time between a failed logon (4625) and the next success (4624)
+        const parseTs = (e) => (e && e.TimeCreated ? new Date(e.TimeCreated).getTime() : null);
+        const secSorted = securityEvents
+            .map(e => ({ id: Number(e.Id), t: parseTs(e) }))
+            .filter(e => e.t !== null)
+            .sort((a, b) => a.t - b.t);
+        let deltas = [];
+        for (let i = 0; i < secSorted.length; i++) {
+            if (secSorted[i].id === 4625) {
+                // find next success after this index
+                for (let j = i + 1; j < secSorted.length; j++) {
+                    if (secSorted[j].id === 4624) {
+                        deltas.push(secSorted[j].t - secSorted[i].t);
+                        break;
+                    }
+                }
+            }
+        }
+        const avgMs = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
+        const minutes = avgMs !== null ? Math.floor(avgMs / 60000) : null;
+        const seconds = avgMs !== null ? Math.floor((avgMs % 60000) / 1000) : null;
+        const avgResponse = avgMs !== null ? `${minutes}m ${seconds}s` : 'N/A';
+
         res.json([
-            { title: 'Total Alerts', value: totalAlerts, trend: '+0.5%', trendUp: true, icon: 'bell' },
-            { title: 'Critical Threats', value: criticalThreats, trend: '+1.2%', trendUp: true, icon: 'exclamation-triangle' },
-            { title: 'Incidents Resolved', value: '96%', trend: '+0%', trendUp: false, icon: 'check-circle' },
-            { title: 'Avg. Response Time', value: '17m 5s', trend: '-0.2m', trendUp: false, icon: 'clock' },
+            { title: 'Total Alerts', value: totalAlerts, trend: '+0.0%', trendUp: true, icon: 'bell' },
+            { title: 'Critical Threats', value: criticalThreats, trend: '+0.0%', trendUp: true, icon: 'exclamation-triangle' },
+            { title: 'Incidents Resolved', value: `${incidentsResolvedPct}%`, trend: '+0%', trendUp: true, icon: 'check-circle' },
+            { title: 'Avg. Response Time', value: avgResponse, trend: '±0m', trendUp: false, icon: 'clock' },
         ]);
     } catch (error) {
+        console.error('Error computing stats from Windows logs:', error);
         res.status(500).json({ message: 'Error fetching stats' });
     }
 };
@@ -87,9 +138,116 @@ exports.getWindowsSecurityEvents = async (req, res) => {
             };
         });
 
+        // Persist critical/high events to DB and also create alerts
+        const toPersist = events.filter(ev => ev.severity === 'high' || ev.severity === 'critical');
+        for (const ev of toPersist) {
+            try {
+                await Event.create({
+                    title: ev.title,
+                    description: ev.description,
+                    sourceIp: ev.sourceIp,
+                    status: ev.severity,
+                    time: ev.timestamp,
+                });
+                await Alert.create({
+                    title: ev.title,
+                    description: ev.description,
+                    source: 'Windows Security',
+                    severity: ev.severity,
+                    status: 'open',
+                });
+            } catch (_) { /* ignore duplicates/errors */ }
+        }
+
         res.json(events);
     } catch (error) {
         console.error('Error fetching Windows security events:', error);
         res.status(500).json({ message: 'Error fetching Windows security events' });
+    }
+};
+
+// --- WINDOWS DEFENDER EVENTS ---
+exports.getWindowsDefenderEvents = async (req, res) => {
+    try {
+        const raw = await windowsReader.readFromLog('Microsoft-Windows-Windows Defender/Operational', 25);
+        const events = (raw || []).map((e, idx) => {
+            const ts = e.TimeCreated ? new Date(e.TimeCreated) : new Date();
+            return {
+                id: `${ts.getTime()}-def-${idx}`,
+                title: `Defender Event ${e.Id || ''}`.trim(),
+                description: (e.Message || '').toString().split('\n')[0] || 'Defender event',
+                timestamp: ts.toLocaleString(),
+                severity: 'high',
+                icon: 'shield-alt',
+                sourceIp: '-',
+                destIp: '-',
+            };
+        });
+        // Persist Defender events as high alerts
+        for (const ev of events) {
+            try {
+                await Event.create({ title: ev.title, description: ev.description, sourceIp: '-', status: 'high', time: ev.timestamp });
+                await Alert.create({ title: ev.title, description: ev.description, source: 'Defender', severity: 'high', status: 'open' });
+            } catch (_) {}
+        }
+        res.json(events);
+    } catch (error) {
+        console.error('Error fetching Defender events:', error);
+        res.status(500).json({ message: 'Error fetching Defender events' });
+    }
+};
+
+// --- SMARTSCREEN EVENTS ---
+exports.getSmartScreenEvents = async (req, res) => {
+    try {
+        const raw = await windowsReader.readFromLog('Microsoft-Windows-SmartScreen/Operational', 25);
+        if (!raw || raw.length === 0) {
+            // Some systems log SmartScreen under Windows Defender SmartScreen
+            const alt = await windowsReader.readFromLog('Windows Defender SmartScreen/Operational', 25);
+            if (!alt || alt.length === 0) return res.json([]);
+            const mappedAlt = alt.map((e, idx) => {
+                const ts = e.TimeCreated ? new Date(e.TimeCreated) : new Date();
+                return {
+                    id: `${ts.getTime()}-ss-alt-${idx}`,
+                    title: `SmartScreen Event ${e.Id || ''}`.trim(),
+                    description: (e.Message || '').toString().split('\n')[0] || 'SmartScreen event',
+                    timestamp: ts.toLocaleString(),
+                    severity: 'high',
+                    icon: 'exclamation-triangle',
+                    sourceIp: '-',
+                    destIp: '-',
+                };
+            });
+            for (const ev of mappedAlt) {
+                try {
+                    await Event.create({ title: ev.title, description: ev.description, sourceIp: '-', status: 'high', time: ev.timestamp });
+                    await Alert.create({ title: ev.title, description: ev.description, source: 'SmartScreen', severity: 'high', status: 'open' });
+                } catch (_) {}
+            }
+            return res.json(mappedAlt);
+        }
+        const events = (raw || []).map((e, idx) => {
+            const ts = e.TimeCreated ? new Date(e.TimeCreated) : new Date();
+            return {
+                id: `${ts.getTime()}-ss-${idx}`,
+                title: `SmartScreen Event ${e.Id || ''}`.trim(),
+                description: (e.Message || '').toString().split('\n')[0] || 'SmartScreen event',
+                timestamp: ts.toLocaleString(),
+                severity: 'high',
+                icon: 'exclamation-triangle',
+                sourceIp: '-',
+                destIp: '-',
+            };
+        });
+        for (const ev of events) {
+            try {
+                await Event.create({ title: ev.title, description: ev.description, sourceIp: '-', status: 'high', time: ev.timestamp });
+                await Alert.create({ title: ev.title, description: ev.description, source: 'SmartScreen', severity: 'high', status: 'open' });
+            } catch (_) {}
+        }
+        res.json(events);
+    } catch (error) {
+        console.error('Error fetching SmartScreen events:', error);
+        res.status(500).json({ message: 'Error fetching SmartScreen events' });
     }
 };

@@ -10,6 +10,7 @@ class WindowsEventReader {
 		this.lastEventId = null;
 		this.isRunning = false;
 		this.powershellPath = this.resolvePowerShellPath();
+		this.logExistenceCache = new Map();
 	}
 
 	// Resolve a working PowerShell binary
@@ -35,6 +36,32 @@ class WindowsEventReader {
 		return 'pwsh';
 	}
 
+	// Generic: read from any Windows event channel
+	async readFromLog(logName, maxEvents = 25, filterIds = []) {
+		// Fast exit if the channel isn't present
+		const exists = await this.logExists(logName);
+		if (!exists) return [];
+		try {
+			let cmd;
+			if (filterIds && filterIds.length > 0) {
+				// Use FilterHashtable for specific IDs
+				const ids = filterIds.join(',');
+				cmd = `"${this.powershellPath}" -NoProfile -NonInteractive -Command "Get-WinEvent -FilterHashtable @{LogName='${logName}'; Id=@(${ids})} -MaxEvents ${maxEvents} | Select-Object TimeCreated, Id, LevelDisplayName, Message | ConvertTo-Json -Depth 3"`;
+			} else {
+				cmd = `"${this.powershellPath}" -NoProfile -NonInteractive -Command "Get-WinEvent -LogName '${logName}' -MaxEvents ${maxEvents} | Select-Object TimeCreated, Id, LevelDisplayName, Message | ConvertTo-Json -Depth 3"`;
+			}
+			const { stdout } = await execAsync(cmd);
+			if (stdout && stdout.trim()) {
+				const events = JSON.parse(stdout);
+				return Array.isArray(events) ? events : [events];
+			}
+			return [];
+		} catch (error) {
+			// Fall back to wevtutil
+			return await this.readEventsViaWevtutil(maxEvents, logName);
+		}
+	}
+
 	// Read Windows Security events using PowerShell (preferred)
 	async readSecurityEvents(maxEvents = 10) {
 		try {
@@ -47,19 +74,23 @@ class WindowsEventReader {
 			return [];
 		} catch (error) {
 			console.error('Error reading Windows events:', error.message);
-			return await this.readEventsViaWevtutil(maxEvents);
+			return await this.readEventsViaWevtutil(maxEvents, 'Security');
 		}
 	}
 
 	// Fallback: use wevtutil (built-in) with XML output and light parsing
-	async readEventsViaWevtutil(maxEvents = 10) {
+	async readEventsViaWevtutil(maxEvents = 10, logName = 'Security') {
 		try {
 			// /rd:true reverses order to get most recent first
-			const command = `wevtutil qe Security /c:${maxEvents} /rd:true /f:xml`;
+			const command = `wevtutil qe "${logName}" /c:${maxEvents} /rd:true /f:xml`;
 			const { stdout } = await execAsync(command);
 			if (!stdout || !stdout.trim()) return [];
 			return this.parseWevtutilXml(stdout);
 		} catch (error) {
+			// Suppress noise for missing channels; otherwise log once
+			if (typeof error.message === 'string' && error.message.toLowerCase().includes('specified channel could not be found')) {
+				return [];
+			}
 			console.error('wevtutil fallback failed:', error.message);
 			return [];
 		}
@@ -83,6 +114,22 @@ class WindowsEventReader {
 		return events;
 	}
 
+	// Check if a given event channel exists (cached)
+	async logExists(logName) {
+		const cached = this.logExistenceCache.get(logName);
+		if (typeof cached === 'boolean') return cached;
+		try {
+			const { stdout } = await execAsync('wevtutil el');
+			const exists = stdout.split(/\r?\n/).some(line => line.trim().toLowerCase() === logName.trim().toLowerCase());
+			this.logExistenceCache.set(logName, exists);
+			return exists;
+		} catch (_) {
+			// If enumeration fails, assume not present to avoid noisy errors
+			this.logExistenceCache.set(logName, false);
+			return false;
+		}
+	}
+
 	async getFailedLogins(maxEvents = 20) {
 		try {
 			const command = `"${this.powershellPath}" -NoProfile -NonInteractive -Command "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents ${maxEvents} | Select-Object TimeCreated, Id, LevelDisplayName, Message | ConvertTo-Json -Depth 3"`;
@@ -95,7 +142,7 @@ class WindowsEventReader {
 		} catch (error) {
 			console.error('Error reading failed logins:', error.message);
 			// Fallback: filter parsed XML
-			const all = await this.readEventsViaWevtutil(maxEvents * 2);
+			const all = await this.readEventsViaWevtutil(maxEvents * 2, 'Security');
 			return all.filter(e => e.Id === 4625).slice(0, maxEvents);
 		}
 	}
@@ -111,7 +158,7 @@ class WindowsEventReader {
 			return [];
 		} catch (error) {
 			console.error('Error reading successful logins:', error.message);
-			const all = await this.readEventsViaWevtutil(maxEvents * 2);
+			const all = await this.readEventsViaWevtutil(maxEvents * 2, 'Security');
 			return all.filter(e => e.Id === 4624).slice(0, maxEvents);
 		}
 	}
@@ -127,7 +174,7 @@ class WindowsEventReader {
 			return [];
 		} catch (error) {
 			console.error('Error reading new processes:', error.message);
-			const all = await this.readEventsViaWevtutil(maxEvents * 2);
+			const all = await this.readEventsViaWevtutil(maxEvents * 2, 'Security');
 			return all.filter(e => e.Id === 4688).slice(0, maxEvents);
 		}
 	}

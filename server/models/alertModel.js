@@ -32,5 +32,8 @@ alertSchema.methods.toJSON = function () {
     return obj;
 };
 
+// Prevent many duplicates for the same alert title created at same minute
+alertSchema.index({ title: 1, createdAt: 1 }, { sparse: true });
+
 const Alert = mongoose.model('Alert', alertSchema);
 module.exports = Alert;

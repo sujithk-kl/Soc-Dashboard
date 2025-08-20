@@ -47,7 +47,7 @@ const createAdminInteractive = async () => {
             process.exit(1);
         }
 
-        // Create admin user
+        // Create admin user - password will be automatically hashed by the pre-save hook
         const adminUser = await User.create({
             name,
             email: email.toLowerCase(),
@@ -58,11 +58,12 @@ const createAdminInteractive = async () => {
 
         console.log('\n✅ Admin user created successfully!');
         console.log(`📧 Login with: ${email}`);
+        console.log('🔐 Password has been securely hashed with bcrypt');
         
         rl.close();
         process.exit();
     } catch (error) {
-        console.error(`❌ Error creating admin: ${error}`);
+        console.error(`❌ Error creating admin: ${error.message}`);
         rl.close();
         process.exit(1);
     }

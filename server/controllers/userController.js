@@ -6,12 +6,29 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password are required.' });
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (user && (password === user.password)) { // NOTE: In production, use bcrypt.compare()
-        const { password, ...userToSend } = user.toObject();
+    try {
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password.' });
+        }
+
+        // Use bcrypt to compare passwords
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid email or password.' });
+        }
+
+        // Check if password needs rehashing (for security upgrades)
+        if (user.needsRehash()) {
+            user.password = password; // This will trigger the pre-save hook to rehash
+            await user.save();
+        }
+
+        const { password: _, ...userToSend } = user.toObject();
         res.status(200).json({ message: 'Login successful!', user: userToSend });
-    } else {
-        res.status(401).json({ message: 'Invalid email or password.' });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
 };
 
@@ -74,16 +91,23 @@ const updatePassword = async (req, res) => {
     const { newPassword } = req.body;
     if (!newPassword) return res.status(400).json({ message: 'New password is required.' });
 
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: 'User not found.' });
+    try {
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: 'User not found.' });
 
-    if (user.role === ROLES.ADMIN) {
-        return res.status(403).json({ message: 'Cannot change password for Admin users via this endpoint.' });
+        if (user.role === ROLES.ADMIN) {
+            return res.status(403).json({ message: 'Cannot change password for Admin users via this endpoint.' });
+        }
+
+        // Update password - the pre-save hook will hash it automatically
+        user.password = newPassword;
+        await user.save();
+        
+        res.status(200).json({ message: 'Password updated successfully.' });
+    } catch (error) {
+        console.error('Password update error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
-
-    user.password = newPassword; // In production, hash this
-    await user.save();
-    res.status(200).json({ message: 'Password updated successfully.' });
 };
 
 module.exports = { login, register, listUsers, updatePassword };

@@ -5,7 +5,6 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const startLogSimulator = require('./services/logSimulator');
 const apiRoutes = require('./routes/api');
 const job = require('./config/cron');
 
@@ -29,7 +28,8 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('❌ Socket.IO: User disconnected:', socket.id));
 });
 
-startLogSimulator(io);
+// Removed simulator: Only real Windows events are used now
+console.log('🧪 Log simulator: REMOVED (using real system events)');
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`✅ Backend server is running on port ${PORT}`));

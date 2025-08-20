@@ -39,6 +39,7 @@ router.get('/stats', dataController.getStats);
 router.get('/alerts', dataController.getAlerts); // This gets the recent 5 for the dashboard
 router.get('/alerts/all', dataController.getAllAlerts); // <-- NEW ROUTE for the alerts page
 router.get('/timeline', dataController.getTimelineEvents);
+router.get('/windows/security', dataController.getWindowsSecurityEvents); // NEW: Windows Security events
 
 // --- PROTECTED ACTION ROUTES (Permission required) ---
 router.post(

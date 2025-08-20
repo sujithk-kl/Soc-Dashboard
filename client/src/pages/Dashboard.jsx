@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { isolateHostAction } from '../services/api';
+import { isolateHostAction, getWindowsSecurityEvents } from '../services/api';
 import useSocket from '../hooks/useSocket';
 
 // Import all layout and dashboard components
@@ -72,14 +72,31 @@ const Dashboard = () => {
 
     // --- USE EFFECT HOOKS ---
 
-    // This hook is intentionally left empty, as per your request
-    // for timeline/alerts to start empty.
-    useEffect(() => { }, []);
+    // Periodically poll Windows Security events and prepend to logs
+    useEffect(() => {
+        let isMounted = true;
+        const fetchEvents = async () => {
+            try {
+                const events = await getWindowsSecurityEvents();
+                if (!isMounted || !Array.isArray(events)) return;
+                // Keep most recent 100 entries
+                setLogs(prev => {
+                    const merged = [...events, ...prev];
+                    const uniqueById = new Map();
+                    for (const e of merged) uniqueById.set(e.id, e);
+                    return Array.from(uniqueById.values()).slice(0, 100);
+                });
+            } catch (_) {}
+        };
+        fetchEvents();
+        const interval = setInterval(fetchEvents, 5000);
+        return () => { isMounted = false; clearInterval(interval); };
+    }, []);
 
-    // This hook handles all real-time updates from WebSockets
+    // This hook handles all real-time updates from WebSockets (kept for simulated logs if any)
     useEffect(() => {
         if (newLog) {
-            setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 19)]);
+            setLogs(prevLogs => [newLog, ...prevLogs.slice(0, 99)]);
 
             if (newLog.location) {
                 const newMarker = { id: newLog.id, pos: [newLog.location.lat, newLog.location.lng], title: newLog.title, severity: newLog.severity };

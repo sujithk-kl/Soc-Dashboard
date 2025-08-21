@@ -47,15 +47,7 @@ A real-time Security Operations Center (SOC) dashboard that monitors Windows sec
    ```bash
    # In server directory
    cp .env.example .env
-   ```
-   
-   Configure `.env`:
-   ```env
-   MONGODB_URI=mongodb://localhost:27017/soc-dashboard
-   JWT_SECRET=your-super-secret-jwt-key
-   PORT=4000
-   FRONTEND_ORIGINS=http://localhost:5173
-   AES_KEY=your-32-character-encryption-key
+   # Edit .env file with your configuration
    ```
 
 3. **Setup & Run**

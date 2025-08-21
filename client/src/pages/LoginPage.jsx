@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState();
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
@@ -61,6 +61,8 @@ const LoginPage = () => {
                         <label className="text-sm font-medium text-gray-text">Email Address</label>
                         <input
                             type="email"
+                            name="username"
+                            autoComplete="username"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-2 mt-2 text-light bg-dark border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -71,6 +73,8 @@ const LoginPage = () => {
                         <label className="text-sm font-medium text-gray-text">Password</label>
                         <input
                             type="password"
+                            name="current-password"
+                            autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2 mt-2 text-light bg-dark border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"

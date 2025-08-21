@@ -50,7 +50,12 @@ const RbacPage = () => {
       setUsers(data);
       toast.success('User created successfully');
     } catch (error) {
-      toast.error(error.message || 'Failed to create user');
+      const msg = error?.response?.data?.message || error?.message || 'Failed to create user';
+      if (/admin limit/i.test(msg)) {
+        alert(msg);
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -92,7 +97,7 @@ const RbacPage = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold text-light">User Management</h1>
       <p className="text-gray-text mt-2">Admins can create, update, block, and delete users. Blocked users cannot log in.</p>
-      <form onSubmit={onCreateUser} className="mt-6 border border-border rounded-md p-4 grid md:grid-cols-4 gap-3">
+      <form onSubmit={onCreateUser} className="mt-6 border border-border rounded-md p-4 grid md:grid-cols-4 gap-3" autoComplete="on">
         <input
           type="text"
           placeholder="Full name"
@@ -103,6 +108,8 @@ const RbacPage = () => {
         />
         <input
           type="email"
+          name="username"
+          autoComplete="username"
           placeholder="Email"
           value={newUser.email}
           onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
@@ -160,9 +167,12 @@ const RbacPage = () => {
               <div className="flex items-center gap-2">
                                  {/* Password Update (for non-admin users) */}
                  {u.role !== ROLES.ADMIN && (
-                   <form onSubmit={(e) => { e.preventDefault(); onChangePassword(u._id); }} className="flex items-center gap-2">
+                   <form onSubmit={(e) => { e.preventDefault(); onChangePassword(u._id); }} className="flex items-center gap-2" autoComplete="on">
+                     {/* Hidden username field for accessibility and browser heuristics */}
+                     <input type="text" name="username" autoComplete="username" defaultValue={u.email} className="hidden" readOnly aria-hidden="true" tabIndex={-1} />
                      <input
                        type="password"
+                       name="new-password"
                        placeholder="New password"
                        value={passwords[u._id] || ''}
                        onChange={(e) => setPasswords(prev => ({ ...prev, [u._id]: e.target.value }))}

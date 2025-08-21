@@ -51,10 +51,28 @@ app.get('/', (req, res) => {
 
 app.use('/api', apiRoutes);
 
+// Function to send real-time stats updates to all connected clients
+const sendStatsUpdate = async () => {
+  try {
+    const dataController = require('./controllers/dataController');
+    const stats = await dataController.getStats({}, { json: (data) => data });
+    io.emit('update_stats', stats);
+  } catch (error) {
+    console.error('Error sending stats update:', error);
+  }
+};
+
 io.on('connection', (socket) => {
   console.log('✅ Socket.IO: A user connected:', socket.id);
+  
+  // Send initial stats when client connects
+  sendStatsUpdate();
+  
   socket.on('disconnect', () => console.log('❌ Socket.IO: User disconnected:', socket.id));
 });
+
+// Send stats updates every 30 seconds
+setInterval(sendStatsUpdate, 30000);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`✅ Backend server is running on port ${PORT}`));

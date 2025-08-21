@@ -41,6 +41,7 @@ exports.getStats = async (req, res) => {
             .map(e => ({ id: Number(e.Id), t: parseTs(e) }))
             .filter(e => e.t !== null)
             .sort((a, b) => a.t - b.t);
+        
         let deltas = [];
         for (let i = 0; i < secSorted.length; i++) {
             if (secSorted[i].id === 4625) {
@@ -53,16 +54,24 @@ exports.getStats = async (req, res) => {
                 }
             }
         }
-        const avgMs = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
-        const minutes = avgMs !== null ? Math.floor(avgMs / 60000) : null;
-        const seconds = avgMs !== null ? Math.floor((avgMs % 60000) / 1000) : null;
-        const avgResponse = avgMs !== null ? `${minutes}m ${seconds}s` : 'N/A';
+        
+        let avgResponse = 'N/A';
+        if (deltas.length > 0) {
+            const avgMs = Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length);
+            const minutes = Math.floor(avgMs / 60000);
+            const seconds = Math.floor((avgMs % 60000) / 1000);
+            avgResponse = `${minutes}m ${seconds}s`;
+        } else if (failedLogons === 0) {
+            avgResponse = 'No failed logins';
+        } else if (successfulLogons === 0) {
+            avgResponse = 'No successful logins';
+        }
 
         res.json([
-            { title: 'Total Alerts', value: totalAlerts, trend: '+0.0%', trendUp: true, icon: 'bell' },
-            { title: 'Critical Threats', value: criticalThreats, trend: '+0.0%', trendUp: true, icon: 'exclamation-triangle' },
-            { title: 'Incidents Resolved', value: `${incidentsResolvedPct}%`, trend: '+0%', trendUp: true, icon: 'check-circle' },
-            { title: 'Avg. Response Time', value: avgResponse, trend: '±0m', trendUp: false, icon: 'clock' },
+            { title: 'Total Alerts', value: totalAlerts, trend: totalAlerts > 0 ? `+${totalAlerts} new` : 'No new alerts', trendUp: totalAlerts > 0, icon: 'bell' },
+            { title: 'Critical Threats', value: criticalThreats, trend: criticalThreats > 0 ? `+${criticalThreats} detected` : 'No threats', trendUp: criticalThreats > 0, icon: 'exclamation-triangle' },
+            { title: 'Incidents Resolved', value: `${incidentsResolvedPct}%`, trend: incidentsResolvedPct >= 80 ? 'Excellent' : incidentsResolvedPct >= 60 ? 'Good' : 'Needs attention', trendUp: incidentsResolvedPct >= 60, icon: 'check-circle' },
+            { title: 'Avg. Response Time', value: avgResponse, trend: avgResponse !== 'N/A' ? 'Measured' : 'No data', trendUp: avgResponse !== 'N/A', icon: 'clock' },
         ]);
     } catch (error) {
         console.error('Error computing stats from Windows logs:', error);

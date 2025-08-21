@@ -18,8 +18,10 @@ const StatCard = ({ title, value, trend, trendUp, icon }) => {
                     <FontAwesomeIcon icon={['fas', icon]} size="lg" />
                 </div>
             </div>
-            <div className={`flex items-center gap-1 text-sm ${trendUp ? 'text-success' : 'text-danger'}`}>
-                <FontAwesomeIcon icon={trendUp ? faArrowUp : faArrowDown} />
+            <div className={`flex items-center gap-1 text-sm ${trendUp ? 'text-success' : trendUp === false ? 'text-danger' : 'text-gray-text'}`}>
+                {trendUp !== null && (
+                    <FontAwesomeIcon icon={trendUp ? faArrowUp : faArrowDown} />
+                )}
                 <span>{trend}</span>
             </div>
         </Card>

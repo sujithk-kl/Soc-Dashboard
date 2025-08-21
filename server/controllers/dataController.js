@@ -138,9 +138,8 @@ exports.getWindowsSecurityEvents = async (req, res) => {
             };
         });
 
-        // Persist critical/high events to DB and also create alerts
-        const toPersist = events.filter(ev => ev.severity === 'high' || ev.severity === 'critical');
-        for (const ev of toPersist) {
+        // Persist all events to DB and create alerts for all severity levels
+        for (const ev of events) {
             try {
                 await Event.create({
                     title: ev.title,
@@ -170,6 +169,28 @@ exports.getWindowsSecurityEvents = async (req, res) => {
 exports.getWindowsDefenderEvents = async (req, res) => {
     try {
         const raw = await windowsReader.readFromLog('Microsoft-Windows-Windows Defender/Operational', 25);
+        
+        // Map Defender event IDs to severity levels
+        const mapDefenderSeverity = (id) => {
+            const eventId = Number(id);
+            switch (eventId) {
+                case 1006: return 'critical'; // Malware detected
+                case 1007: return 'critical'; // Malware action taken
+                case 1008: return 'high';     // Malware action failed
+                case 1009: return 'high';     // Malware action taken
+                case 1010: return 'medium';   // Malware quarantined
+                case 1011: return 'medium';   // Malware removed
+                case 1012: return 'low';      // Malware allowed
+                case 1116: return 'high';     // Malware detected
+                case 1117: return 'medium';   // Malware quarantined
+                case 1118: return 'low';      // Malware allowed
+                case 1150: return 'low';      // Endpoint Protection healthy
+                case 1151: return 'low';      // Endpoint Protection status
+                case 5007: return 'medium';   // Configuration change
+                default: return 'medium';     // Default for unknown events
+            }
+        };
+
         const events = (raw || []).map((e, idx) => {
             const ts = e.TimeCreated ? new Date(e.TimeCreated) : new Date();
             return {
@@ -177,17 +198,18 @@ exports.getWindowsDefenderEvents = async (req, res) => {
                 title: `Defender Event ${e.Id || ''}`.trim(),
                 description: (e.Message || '').toString().split('\n')[0] || 'Defender event',
                 timestamp: ts.toLocaleString(),
-                severity: 'high',
+                severity: mapDefenderSeverity(e.Id),
                 icon: 'shield-alt',
                 sourceIp: '-',
                 destIp: '-',
             };
         });
-        // Persist Defender events as high alerts
+        
+        // Persist all Defender events as alerts
         for (const ev of events) {
             try {
-                await Event.create({ title: ev.title, description: ev.description, sourceIp: '-', status: 'high', time: ev.timestamp });
-                await Alert.create({ title: ev.title, description: ev.description, source: 'Defender', severity: 'high', status: 'open' });
+                await Event.create({ title: ev.title, description: ev.description, sourceIp: '-', status: ev.severity, time: ev.timestamp });
+                await Alert.create({ title: ev.title, description: ev.description, source: 'Defender', severity: ev.severity, status: 'open' });
             } catch (_) {}
         }
         res.json(events);

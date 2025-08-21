@@ -8,6 +8,8 @@ const dataController = require('../controllers/dataController');
 const userController = require('../controllers/userController');
 const { requirePermission } = require('../middleware/auth');
 const { PERMISSIONS, ROLES } = require('../config/roles');
+const Alert = require('../models/alertModel');
+const Event = require('../models/eventModel');
 
 // --- AUTHENTICATION ROUTES ---
 router.post('/auth/login', userController.login);
@@ -42,6 +44,36 @@ router.get('/timeline', dataController.getTimelineEvents);
 router.get('/windows/security', dataController.getWindowsSecurityEvents); // NEW: Windows Security events
 router.get('/windows/defender', dataController.getWindowsDefenderEvents); // NEW: Defender Operational log
 router.get('/windows/smartscreen', dataController.getSmartScreenEvents); // NEW: SmartScreen Operational log
+
+// --- WINDOWS EVENT INGEST (from on-prem collector) ---
+router.post('/ingest/windows', async (req, res) => {
+  try {
+    const shared = process.env.INGEST_SHARED_SECRET || '';
+    const provided = req.header('X-Auth') || '';
+    if (!shared || provided !== shared) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const events = Array.isArray(req.body) ? req.body : [];
+    let saved = 0;
+    for (const e of events) {
+      const ts = e.TimeCreated ? new Date(e.TimeCreated) : new Date();
+      const idNum = Number(e.Id);
+      const title = e.LevelDisplayName ? `${e.LevelDisplayName} Event ${idNum||''}`.trim() : `Windows Event ${idNum||''}`;
+      const desc = (e.Message || '').toString().split('\n')[0] || 'Windows event';
+      const severity = idNum === 4625 ? 'high' : idNum === 4688 ? 'medium' : 'low';
+      try {
+        await Event.create({ title, description: desc, sourceIp: '-', status: severity, time: ts.toLocaleString() });
+        if (severity === 'high' || severity === 'critical') {
+          await Alert.create({ title, description: desc, source: 'Ingested Windows', severity, status: 'open' });
+        }
+        saved++;
+      } catch (_) {}
+    }
+    return res.status(200).json({ saved });
+  } catch (err) {
+    return res.status(500).json({ message: 'Ingest failed' });
+  }
+});
 
 // --- PROTECTED ACTION ROUTES (Permission required) ---
 router.post(

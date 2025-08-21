@@ -1,49 +1,178 @@
-# Soc-Dashboard
+# SOC Dashboard
 
-# Real-Time SOC (Security Operations Center) Dashboard
+A real-time Security Operations Center (SOC) dashboard that monitors Windows security events, provides threat intelligence, and offers comprehensive alert management.
 
-A full-stack, real-time cybersecurity dashboard designed to help SOC teams monitor, detect, and respond to threats across a network using real-time logs, alerts, and threat intelligence data.
+![SOC Dashboard](https://img.shields.io/badge/Status-Active-brightgreen)
+![Node.js](https://img.shields.io/badge/Node.js-18+-green)
+![React](https://img.shields.io/badge/React-18+-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-6+-green)
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- **Real-Time Log Feed** via WebSockets
-- **Alerts Dashboard** with severity, status, and SLA breakdowns
-- **Threat Map** with geolocation markers
-- **Graphical Charts** using Recharts for log trends
-- **RBAC (Role-Based Access Control)** with MFA support
-- **Threat Intelligence APIs** (VirusTotal, AbuseIPDB, Shodan)
-- **Dark Mode** for better visibility
-- **Export Logs** to CSV
+- **Real-Time Monitoring**: Windows Security, Defender, and SmartScreen events
+- **Advanced Alert Management**: Search, filter, and sort with performance optimization
+- **RBAC System**: Admin, Analyst, and Viewer roles with JWT authentication
+- **Threat Intelligence**: Real-time threat map and timeline events
+- **Encrypted Storage**: Sensitive data protection in MongoDB
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer       | Technologies Used                                       |
-|-------------|----------------------------------------------------------|
-| Frontend    | React.js, Tailwind CSS, Recharts, Leaflet.js             |
-| Backend     | Node.js, Express.js, Socket.IO                           |
-| Database    | MongoDB                                                  |
-| Security Tools | Suricata/Wazuh (HIDS/NIDS), VirusTotal API, AbuseIPDB |
-| Real-Time   | WebSockets (Socket.IO)                                   |
+**Frontend**: React 18, Tailwind CSS, FontAwesome, Socket.IO  
+**Backend**: Node.js, Express.js, MongoDB, JWT  
+**Security**: Windows Event Logs, PowerShell Integration, Data Encryption
 
 ---
 
-## 📊 Dashboard Preview
+## 🚀 Quick Start
 
-![SOC Dashboard Screenshot](link-to-screenshot-if-hosted)
+### Prerequisites
+- Node.js 18+, MongoDB 6+, Windows 10/11, PowerShell
+
+### Installation
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/yourusername/soc-dashboard.git
+   cd soc-dashboard
+   npm install
+   cd client && npm install
+   cd ../server && npm install
+   ```
+
+2. **Configure Environment**
+   ```bash
+   # In server directory
+   cp .env.example .env
+   ```
+   
+   Configure `.env`:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/soc-dashboard
+   JWT_SECRET=your-super-secret-jwt-key
+   PORT=4000
+   FRONTEND_ORIGINS=http://localhost:5173
+   AES_KEY=your-32-character-encryption-key
+   ```
+
+3. **Setup & Run**
+   ```bash
+   # Create admin user
+   cd server && node createAdmin.js
+   
+   # Start backend (Terminal 1)
+   npm run dev
+   
+   # Start frontend (Terminal 2)
+   cd ../client && npm run dev
+   ```
+
+4. **Access Dashboard**
+   - Frontend: http://localhost:5173
+   - Backend: http://localhost:4000
+   - Default: `admin@example.com` / `admin123`
 
 ---
 
-## 📁 Folder Structure
+## 📊 Event Monitoring
 
+| Event ID | Description | Severity |
+|----------|-------------|----------|
+| 4624 | Successful logon | Low |
+| 4625 | Failed logon | High |
+| 4688 | Process creation | Medium |
+| 1006 | Malware detected | Critical |
+| 1150 | Defender healthy | Low |
+
+**Monitored Logs**: Security, Windows Defender, SmartScreen
+
+---
+
+## 🔧 Configuration
+
+### Alert Management
+- **Search**: Real-time search across all fields
+- **Filters**: Status, severity, source filtering
+- **Performance**: Debounced search (300ms), pagination (100 items)
+- **Sorting**: Click column headers to sort
+
+### Security Features
+- **Authentication**: JWT-based with role-based access
+- **Encryption**: Data encrypted at rest in MongoDB
+- **CORS**: Configurable origin restrictions
+- **Windows Integration**: Secure PowerShell execution
+
+---
+
+## 📁 Project Structure
+
+```
+soc-dashboard/
+├── client/          # React frontend
+│   ├── src/
+│   │   ├── components/  # UI components
+│   │   ├── pages/       # Page components
+│   │   ├── services/    # API services
+│   │   └── contexts/    # React contexts
+├── server/          # Node.js backend
+│   ├── controllers/ # Route handlers
+│   ├── models/      # MongoDB models
+│   ├── routes/      # API routes
+│   └── utils/       # Utilities
+└── README.md
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Windows Events Not Loading**
 ```bash
-src/
-│
-├── components/        # Dashboard Cards, Charts, Map, Table
-├── pages/             # Dashboard, Alerts, Reports
-├── services/          # API calls, WebSocket handlers
-├── utils/             # Helper functions and constants
-└── App.jsx            # Main component
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Get-WinEvent -LogName Security -MaxEvents 1
+```
+
+**MongoDB Connection**
+```bash
+net start MongoDB
+# Verify: mongodb://localhost:27017/soc-dashboard
+```
+
+**CORS Errors**
+```bash
+# Update FRONTEND_ORIGINS in .env
+FRONTEND_ORIGINS=http://localhost:5173
+```
+
+---
+
+## 📊 API Endpoints
+
+**Authentication**: `POST /api/auth/login`, `POST /api/auth/register`  
+**Alerts**: `GET /api/alerts`, `GET /api/windows/security`  
+**Dashboard**: `GET /api/stats`, `GET /api/timeline`
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ for the cybersecurity community**

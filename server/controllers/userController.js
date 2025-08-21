@@ -12,6 +12,11 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+        // Check if user is blocked
+        if (user.status === 'blocked') {
+            return res.status(403).json({ message: 'Your account has been blocked. Please contact an administrator.' });
+        }
+
         // Use bcrypt to compare passwords
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
@@ -110,4 +115,68 @@ const updatePassword = async (req, res) => {
     }
 };
 
-module.exports = { login, register, listUsers, updatePassword };
+// Admin: delete user
+const deleteUser = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        // Prevent deleting the last admin
+        if (user.role === ROLES.ADMIN) {
+            const adminCount = await User.countDocuments({ role: ROLES.ADMIN });
+            if (adminCount <= 1) {
+                return res.status(403).json({ message: 'Cannot delete the last admin user.' });
+            }
+        }
+
+        // Prevent admin from deleting themselves
+        const requesterId = req.user?._id;
+        if (requesterId && requesterId.toString() === id) {
+            return res.status(403).json({ message: 'Cannot delete your own account.' });
+        }
+
+        await User.findByIdAndDelete(id);
+        res.status(200).json({ message: 'User deleted successfully.' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+// Admin: block/unblock user
+const toggleUserStatus = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        // Prevent blocking the last admin
+        if (user.role === ROLES.ADMIN) {
+            const activeAdminCount = await User.countDocuments({ role: ROLES.ADMIN, status: 'active' });
+            if (activeAdminCount <= 1 && user.status === 'active') {
+                return res.status(403).json({ message: 'Cannot block the last active admin user.' });
+            }
+        }
+
+        // Prevent admin from blocking themselves
+        const requesterId = req.user?._id;
+        if (requesterId && requesterId.toString() === id) {
+            return res.status(403).json({ message: 'Cannot block your own account.' });
+        }
+
+        // Toggle status
+        user.status = user.status === 'active' ? 'blocked' : 'active';
+        await user.save();
+
+        const action = user.status === 'active' ? 'unblocked' : 'blocked';
+        res.status(200).json({ message: `User ${action} successfully.` });
+    } catch (error) {
+        console.error('Toggle user status error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+module.exports = { login, register, listUsers, updatePassword, deleteUser, toggleUserStatus };

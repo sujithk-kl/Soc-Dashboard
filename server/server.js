@@ -32,7 +32,7 @@ const corsOptions = {
     if (clientURLs.includes(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
-  methods: ["GET", "POST", "PUT"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
 };
 
 const io = new Server(server, { cors: { origin: (origin, cb) => cb(null, true), methods: ["GET", "POST"] } });

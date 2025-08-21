@@ -36,6 +36,18 @@ router.put('/admin/users/:id/password', (req, res, next) => {
     next();
 }, userController.updatePassword);
 
+router.delete('/admin/users/:id', (req, res, next) => {
+    const role = req.header('X-User-Role');
+    if (role !== ROLES.ADMIN) return res.status(403).json({ message: 'Admin only.' });
+    next();
+}, userController.deleteUser);
+
+router.put('/admin/users/:id/status', (req, res, next) => {
+    const role = req.header('X-User-Role');
+    if (role !== ROLES.ADMIN) return res.status(403).json({ message: 'Admin only.' });
+    next();
+}, userController.toggleUserStatus);
+
 // --- PUBLIC DATA ROUTES (No permissions required) ---
 router.get('/stats', dataController.getStats);
 router.get('/alerts', dataController.getAlerts); // This gets the recent 5 for the dashboard

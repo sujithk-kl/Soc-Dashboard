@@ -61,6 +61,20 @@ export const adminCreateUser = async (payload, adminRole) => {
     return res.data;
 };
 
+export const deleteUser = async (userId, adminRole) => {
+    const res = await axios.delete(`${API_URL}/admin/users/${userId}`, {
+        headers: { 'X-User-Role': adminRole }
+    });
+    return res.data;
+};
+
+export const toggleUserStatus = async (userId, adminRole) => {
+    const res = await axios.put(`${API_URL}/admin/users/${userId}/status`, {}, {
+        headers: { 'X-User-Role': adminRole }
+    });
+    return res.data;
+};
+
 // --- WINDOWS SECURITY EVENTS ---
 export const getWindowsSecurityEvents = () => fetchData('windows/security');
 export const getWindowsDefenderEvents = () => fetchData('windows/defender');

@@ -8,8 +8,8 @@ const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuth();
 
     if (!isAuthenticated) {
-        // If not authenticated, redirect to the login page
-        return <Navigate to="/login" />;
+        // If not authenticated, redirect to IAM login by default
+        return <Navigate to="/login/iam" />;
     }
 
     // If authenticated, render the component that was passed in

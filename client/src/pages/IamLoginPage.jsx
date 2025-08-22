@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getUserRoleByEmail } from '../services/api';
 
@@ -59,6 +59,11 @@ const IamLoginPage = () => {
                         {isLoading ? 'Signing in...' : 'Sign in'}
                     </button>
                 </form>
+                <div className="mt-4">
+                    <Link to="/" className="inline-block px-4 py-2 text-sm font-semibold text-light border border-white/20 rounded hover:border-white/40">
+                        Back to Home
+                    </Link>
+                </div>
             </div>
         </div>
     );

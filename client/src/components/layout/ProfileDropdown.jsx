@@ -4,14 +4,22 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faCog, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileDropdown = ({ onClose }) => {
-    const { user, logout } = useAuth();
+    const { user, logout, ROLES } = useAuth();
+    const navigate = useNavigate();
 
     const handleLogout = (e) => {
         e.preventDefault();
+        const roleAtLogout = user?.role;
         logout();
         onClose();
+        if (roleAtLogout === ROLES.ADMIN) {
+            navigate('/login/root');
+        } else {
+            navigate('/login/iam');
+        }
     };
 
     return (

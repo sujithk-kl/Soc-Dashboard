@@ -47,22 +47,28 @@ const HomePage = () => {
                             )}
                         </>
                     ) : (
-                        <>
+                        <div className="grid gap-4 sm:grid-cols-2 w-full">
                             <Link
-                                to="/login"
-                                className="bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary-dark transition-colors"
+                                to="/login/iam"
+                                className="bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary-dark transition-colors text-center"
                             >
-                                Login
+                                Sign in as IAM user
+                            </Link>
+                            <Link
+                                to="/login/root"
+                                className="bg-transparent border border-white/20 text-light font-semibold py-3 px-6 rounded-lg hover:border-white/40 transition-colors text-center"
+                            >
+                                Sign in as Root user
                             </Link>
                             {hasAdmin === false && (
                                 <Link
                                     to="/register"
-                                    className="bg-transparent border border-white/20 text-light font-semibold py-3 px-6 rounded-lg hover:border-white/40 transition-colors"
+                                    className="bg-transparent border border-white/20 text-light font-semibold py-3 px-6 rounded-lg hover:border-white/40 transition-colors text-center sm:col-span-2"
                                 >
-                                    Register
+                                    Create first Admin account
                                 </Link>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             </div>

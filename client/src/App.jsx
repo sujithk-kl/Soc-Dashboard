@@ -6,6 +6,8 @@ import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from './pages/LoginPage';
+import RootLoginPage from './pages/RootLoginPage';
+import IamLoginPage from './pages/IamLoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 
@@ -33,6 +35,8 @@ function App() {
           {/* --- PUBLIC ROUTES --- */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/root" element={<RootLoginPage />} />
+          <Route path="/login/iam" element={<IamLoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
           {/* --- PROTECTED LAYOUT ROUTE --- */}

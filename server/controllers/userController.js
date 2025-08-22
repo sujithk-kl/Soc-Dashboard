@@ -179,4 +179,17 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-module.exports = { login, register, listUsers, updatePassword, deleteUser, toggleUserStatus };
+// Public: get user role by email (for client-side gating on IAM login)
+const getUserRoleByEmail = async (req, res) => {
+    try {
+        const email = (req.query.email || '').toLowerCase();
+        if (!email) return res.status(400).json({ message: 'Email is required.' });
+        const user = await User.findOne({ email }, { role: 1, _id: 0 });
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+        return res.status(200).json({ role: user.role });
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+module.exports = { login, register, listUsers, updatePassword, deleteUser, toggleUserStatus, getUserRoleByEmail };

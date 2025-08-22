@@ -47,6 +47,12 @@ export const getBootstrapStatus = async () => {
     return res.data; // { hasAdmin: boolean }
 };
 
+// --- PUBLIC USER LOOKUP ---
+export const getUserRoleByEmail = async (email) => {
+    const res = await axios.get(`${API_URL}/auth/user-role`, { params: { email } });
+    return res.data; // { role }
+};
+
 export const updateUserPassword = async (userId, newPassword, adminRole) => {
     const res = await axios.put(`${API_URL}/admin/users/${userId}/password`, { newPassword }, {
         headers: { 'X-User-Role': adminRole }

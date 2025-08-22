@@ -50,11 +50,12 @@ export const AuthProvider = ({ children }) => {
             if (response.data.user) {
                 setUser(response.data.user);
                 toast.success('Login successful!');
-                return true;
+                // Return the user object so callers can enforce role-based redirects
+                return response.data.user;
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Login failed.');
-            return false;
+            return null;
         }
     };
 

@@ -13,6 +13,7 @@ const Event = require('../models/eventModel');
 
 // --- AUTHENTICATION ROUTES ---
 router.post('/auth/login', userController.login);
+router.get('/auth/user-role', userController.getUserRoleByEmail);
 router.post('/auth/register', userController.register); // Registration route (bootstrap + admin-only afterwards)
 
 // Bootstrap status: whether any Admin exists

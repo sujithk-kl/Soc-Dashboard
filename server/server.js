@@ -8,50 +8,52 @@ const connectDB = require('./config/db');
 const apiRoutes = require('./routes/api');
 const job = require('./config/cron');
 
-
 dotenv.config();
 connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const defaultClientURLs = [
+
+const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "https://soc-dashboard-tau.vercel.app",
   "https://soc.sujithk.me"
 ];
-const extraOrigins = (process.env.FRONTEND_ORIGINS || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
-const clientURLs = Array.from(new Set([...defaultClientURLs, ...extraOrigins]));
 
-const corsOptions = {
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow tools/curl
-    if (clientURLs.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  methods: ["GET", "POST", "PUT", "DELETE"],
-};
+// ✅ Express CORS middleware
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // allow cookies/tokens if needed
+  })
+);
 
-const io = new Server(server, { cors: { origin: (origin, cb) => cb(null, true), methods: ["GET", "POST"] } });
-
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
-// Health check endpoint
+// ✅ Health check
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'success', 
+  res.json({
+    status: 'success',
     message: 'SOC Dashboard Backend Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
+// ✅ API routes
 app.use('/api', apiRoutes);
 
-// Function to send real-time stats updates to all connected clients
+// ✅ Socket.IO with same CORS policy
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// --- Socket events ---
 const sendStatsUpdate = async () => {
   try {
     const dataController = require('./controllers/dataController');
@@ -63,16 +65,18 @@ const sendStatsUpdate = async () => {
 };
 
 io.on('connection', (socket) => {
-  console.log('✅ Socket.IO: A user connected:', socket.id);
-  
-  // Send initial stats when client connects
+  console.log('✅ Socket.IO: User connected:', socket.id);
+
   sendStatsUpdate();
-  
-  socket.on('disconnect', () => console.log('❌ Socket.IO: User disconnected:', socket.id));
+
+  socket.on('disconnect', () =>
+    console.log('❌ Socket.IO: User disconnected:', socket.id)
+  );
 });
 
-// Send stats updates every 30 seconds
 setInterval(sendStatsUpdate, 30000);
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`✅ Backend server is running on port ${PORT}`));
+server.listen(PORT, () =>
+  console.log(`✅ Backend server running on port ${PORT}`)
+);
